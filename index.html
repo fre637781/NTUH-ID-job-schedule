@@ -278,13 +278,13 @@
       <h2 id="vmTitle"></h2>
       <button class="quiet vm-nav" id="vmNext" title="下個月">&#8250;</button>
       <span class="sp"></span>
-      <button id="btnVmExport">匯出圖片</button>
+      <button id="btnVmExport">另存圖片</button>
       <button class="primary" id="btnVmEdit">編輯</button>
     </div>
     <div class="vm-legend" id="vmLegend"></div>
     <div class="vm-grid" id="vmGrid"></div>
     <div class="vm-detail" id="vmDetail" hidden></div>
-    <p class="hint">點任一格查看當日值班 R/VS;點上方人名膠囊只看該員的班(再點一次取消)。匯出圖片會反映目前的篩選狀態。</p>
+    <p class="hint">點任一格查看當日值班 R/VS;點上方人名膠囊只看該員的班(再點一次取消)。另存圖片會反映目前的篩選狀態。</p>
   </section>
 
   <!-- 1. 名單 -->
@@ -1295,10 +1295,7 @@
     var fname = "ID班表_" + Y + pad2(M) +
       (vmFilter && byCode(vmFilter) ? "_" + byCode(vmFilter).name : "") + ".png";
     cv.toBlob(function (blob) {
-      var file = new File([blob], fname, { type: "image/png" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: fname }).catch(function () { triggerDownload(blob, fname); });
-      } else triggerDownload(blob, fname);
+      triggerDownload(blob, fname);
     }, "image/png");
   });
 
