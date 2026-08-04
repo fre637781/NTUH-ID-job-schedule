@@ -452,8 +452,8 @@
     { key: "wesV", label: "西址 VS",      role: "VS", type: "plain" },
     { key: "b14",  label: "14B",          role: "R",  type: "plain" },
     { key: "e53",  label: "5E3",          role: "R",  type: "plain" },
-    { key: "dutR", label: "急診 R",  file: "急診值班R",  role: "R",  type: "duty" },
-    { key: "dutV", label: "急診 VS", file: "急診值班VS", role: "VS", type: "duty" }
+    { key: "dutR", label: "急診 R",  csvLabel: "急診/值班 R",  file: "急診值班R",  role: "R",  type: "duty" },
+    { key: "dutV", label: "急診 VS", csvLabel: "急診/值班 VS", file: "急診值班VS", role: "VS", type: "duty" }
   ];
 
   // ---------- state ----------
@@ -1082,7 +1082,7 @@
     BLOCKS.forEach(function (b) {
       var tr = document.createElement("tr");
       tr.innerHTML = "<td></td><td></td><td class='fname'></td><td></td>";
-      tr.cells[0].textContent = b.label;
+      tr.cells[0].textContent = b.csvLabel || b.label;
       const inp = document.createElement("input");
       inp.className = "sched-code";
       inp.maxLength = 8;
