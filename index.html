@@ -14,14 +14,14 @@
     --accent: #0E7C86;
     --accent-ink: #0B5F67;
     --accent-soft: #E3F1F2;
-    --hol: #EFEAE0;
+    --hol: #FBF1E3;
     --hol-ink: #A8630C;
     --warn: #C2410C;
     --warn-soft: #FBE8DE;
     --ok: #177245;
     --ok-soft: #E2F2E9;
     --shadow: 0 1px 3px rgba(29,43,47,.07);
-    --p0: #DCEBFA; --p1: #E3F4DE; --p2: #F6E4F0; --p3: #FDEAD2;
+    --p0: #DCEBFA; --p1: #E3F4DE; --p2: #F6E4F0; --p3: #FAD9A5;
     --p4: #E4E7FB; --p5: #DFF3F0; --p6: #F9E3E0; --p7: #F0EFD8;
   }
   @media (prefers-color-scheme: dark) {
@@ -34,7 +34,7 @@
       --accent: #4FB3BC;
       --accent-ink: #7BC8CF;
       --accent-soft: #173237;
-      --hol: #29251D;
+      --hol: #2B2318;
       --hol-ink: #D69A4E;
       --warn: #E5764A;
       --warn-soft: #3A241B;
@@ -1375,7 +1375,7 @@
   });
 
   // ---------- 匯出圖片 ----------
-  var PAL_IMG = ["#DCEBFA", "#E3F4DE", "#F6E4F0", "#FDEAD2", "#E4E7FB", "#DFF3F0", "#F9E3E0", "#F0EFD8"];
+  var PAL_IMG = ["#DCEBFA", "#E3F4DE", "#F6E4F0", "#FAD9A5", "#E4E7FB", "#DFF3F0", "#F9E3E0", "#F0EFD8"];
   function rrPath(ctx, x, y, w, h, r) {
     ctx.beginPath();
     ctx.moveTo(x + r, y);
@@ -1441,7 +1441,7 @@
       var cx = pad + (pos % 7) * (cellW + gap);
       var cy2 = top + Math.floor(pos / 7) * (cellH + gap);
       rrPath(ctx, cx, cy2, cellW, cellH, 12);
-      ctx.fillStyle = isHol(d) ? "#EFEAE0" : "#FFFFFF";
+      ctx.fillStyle = isHol(d) ? "#FBF1E3" : "#FFFFFF";
       ctx.fill();
       ctx.strokeStyle = "#DCE6E8"; ctx.lineWidth = 2;
       rrPath(ctx, cx, cy2, cellW, cellH, 12);
