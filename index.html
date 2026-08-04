@@ -236,6 +236,21 @@
     margin-top: 10px; border: 1px solid var(--line); border-radius: 10px;
     padding: 8px 12px; font-size: .9rem; background: var(--accent-soft);
   }
+  [hidden] { display: none !important; }
+  .vm-tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+  .vm-tabs button { flex: 1; border-radius: 8px; font-size: .85rem; padding: 4px; }
+  .vm-tabs button.active {
+    background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700;
+  }
+  .vm-ctable { width: 100%; font-size: .9rem; }
+  .vm-ctable td.cl { font-weight: 600; }
+  .vm-ctable tr.vm-sub td {
+    background: var(--accent-soft); color: var(--accent-ink);
+    font-weight: 700; font-size: .8rem; letter-spacing: .1em;
+  }
+  body.viewonly #btnVmEdit, body.viewonly #vmPrev, body.viewonly #vmNext { display: none; }
+  .icu-head { display: flex; gap: 6px; align-items: center; }
+  .icu-head input { flex: 1; font-size: .8rem; padding: 2px 6px; min-width: 0; }
   .flag {
     display: inline-block; font-size: .7rem; font-weight: 700; border-radius: 6px;
     padding: 0 6px; align-self: flex-start;
@@ -281,9 +296,14 @@
       <button id="btnVmExport">另存圖片</button>
       <button class="primary" id="btnVmEdit">編輯</button>
     </div>
+    <div class="vm-tabs">
+      <button id="vmTabDuty" class="active">值班表</button>
+      <button id="vmTabConsult">照會表</button>
+    </div>
     <div class="vm-legend" id="vmLegend"></div>
     <div class="vm-grid" id="vmGrid"></div>
     <div class="vm-detail" id="vmDetail" hidden></div>
+    <div id="vmConsult" hidden></div>
     <p class="hint">點任一格查看當日值班 R/VS;點上方人名膠囊只看該員的班(再點一次取消)。另存圖片會反映目前的篩選狀態。</p>
   </section>
 
@@ -337,6 +357,17 @@
     <div class="sec-head"><span class="no">3</span><h2>本月各區負責人</h2>
       <span class="note">可留空;右上角為輸出檔班表代號</span></div>
     <div class="assign-grid" id="assignGrid"></div>
+  </section>
+
+  <!-- 3-2. ICU 負責人 -->
+  <section class="card">
+    <div class="sec-head"><span class="no">3-2</span><h2>ICU 負責人</h2>
+      <span class="note">病房欄位可改名/增減;此區塊不產出 CSV</span></div>
+    <div class="assign-grid" id="icuGrid"></div>
+    <div class="row" style="margin-top:10px">
+      <input id="newIcuWard" placeholder="病房名稱,如:6E1" maxlength="10" style="width:160px">
+      <button class="primary" id="btnAddIcu">新增病房</button>
+    </div>
   </section>
 
   <!-- 4. 預假/預班 -->
@@ -396,11 +427,12 @@
     <div class="sec-head"><span class="no">7</span><h2>分享班表</h2>
       <span class="note">把本月班表(含名單)打包成網址,傳給同事開啟即載入</span></div>
     <div class="row">
-      <button class="primary" id="btnShare">產生分享網址</button>
+      <button class="primary" id="btnShare">產生編輯連結</button>
+      <button class="primary" id="btnShareView">產生檢視連結</button>
       <button id="btnCopyShare" hidden>複製網址</button>
     </div>
     <textarea class="share-box" id="shareBox" readonly hidden></textarea>
-    <p class="hint">網址中 # 之後的內容只在瀏覽器本地解讀,不會被送到伺服器。對方開啟後會先詢問是否載入;載入會覆蓋其瀏覽器中同月份的資料與名單。</p>
+    <p class="hint">兩種連結都只含「當月」班表與名單,不會送到任何伺服器。編輯連結:對方載入後可完整編輯。檢視連結:對方只看到檢視模式(值班表+照會表),沒有編輯按鈕與換月箭頭(此為介面限制,非加密保護)。載入會覆蓋對方瀏覽器中同月份的資料與名單。</p>
   </section>
 </div>
 
@@ -425,6 +457,7 @@
   ];
 
   // ---------- state ----------
+  var ICU_DEFAULT = ["6E1", "3C", "3A2", "4C2", "5CVI", "3B2"];
   function blankCodes() {
     var o = {};
     BLOCKS.forEach(function (b) { o[b.key] = ""; });
@@ -436,10 +469,11 @@
       if (s && Array.isArray(s.persons) && s.months) {
         if (!s.schedCodes) s.schedCodes = blankCodes();
         if (!s.schedName) s.schedName = "感染科";
+        if (!Array.isArray(s.icuWards)) s.icuWards = ICU_DEFAULT.slice();
         return s;
       }
     } catch (e) {}
-    return { persons: [], schedName: "感染科", schedCodes: blankCodes(), months: {} };
+    return { persons: [], schedName: "感染科", schedCodes: blankCodes(), icuWards: ICU_DEFAULT.slice(), months: {} };
   }
   var state = load();
   function save() { localStorage.setItem(K, JSON.stringify(state)); }
@@ -450,6 +484,7 @@
   function mdat() {
     var m = state.months[mid()];
     if (!m) m = state.months[mid()] = { holidays: [], duty: {}, vsOv: {}, assign: {}, off: {}, want: {} };
+    if (!m.icu) m.icu = {};
     if (!("prevLast" in m)) {
       var py = M === 1 ? Y - 1 : Y, pm = M === 1 ? 12 : M - 1;
       var pd = state.months[py + "-" + pad2(pm)];
@@ -561,6 +596,9 @@
           if (typeof cfg.schedCodes[b.key] === "string") state.schedCodes[b.key] = cfg.schedCodes[b.key];
         });
         if (typeof cfg.schedName === "string" && cfg.schedName) state.schedName = cfg.schedName;
+        if (Array.isArray(cfg.icuWards)) {
+          state.icuWards = cfg.icuWards.filter(function (w) { return typeof w === "string" && w; });
+        }
         save(); renderAll();
         alert("已匯入:VS " + byRole("VS").length + " 位、R " + byRole("R").length + " 位。");
       } catch (e) {
@@ -572,7 +610,8 @@
   document.getElementById("btnExportCfg").addEventListener("click", function () {
     var cfg = {
       type: "ntuh-id-schedule-config", version: 1,
-      schedName: state.schedName, persons: state.persons, schedCodes: state.schedCodes
+      schedName: state.schedName, persons: state.persons, schedCodes: state.schedCodes,
+      icuWards: state.icuWards
     };
     var blob = new Blob([JSON.stringify(cfg, null, 2)], { type: "application/json" });
     triggerDownload(blob, "ID班表設定檔.json");
@@ -636,6 +675,69 @@
       grid.appendChild(div);
     });
   }
+
+  // ---------- 3-2. ICU ----------
+  function renderIcu() {
+    var m = mdat();
+    var grid = document.getElementById("icuGrid");
+    grid.innerHTML = "";
+    state.icuWards.forEach(function (w, wi) {
+      var div = document.createElement("div");
+      div.className = "assign-item";
+      var head = document.createElement("div");
+      head.className = "icu-head";
+      const inp = document.createElement("input");
+      inp.value = w; inp.maxLength = 10;
+      inp.addEventListener("change", function () {
+        var nw = inp.value.trim();
+        if (!nw) { inp.value = w; return; }
+        if (nw !== w && state.icuWards.indexOf(nw) >= 0) { alert("病房名稱重複"); inp.value = w; return; }
+        state.icuWards[wi] = nw;
+        Object.keys(state.months).forEach(function (id) {
+          var mm = state.months[id];
+          if (mm.icu && (w in mm.icu)) { mm.icu[nw] = mm.icu[w]; delete mm.icu[w]; }
+        });
+        save(); renderIcu();
+      });
+      var del = document.createElement("button");
+      del.className = "quiet"; del.textContent = "×"; del.title = "刪除病房";
+      del.addEventListener("click", function () {
+        if (!confirm("刪除病房「" + state.icuWards[wi] + "」?各月份其負責人設定會一併移除。")) return;
+        var name = state.icuWards[wi];
+        state.icuWards.splice(wi, 1);
+        Object.keys(state.months).forEach(function (id) {
+          if (state.months[id].icu) delete state.months[id].icu[name];
+        });
+        save(); renderIcu();
+      });
+      head.appendChild(inp); head.appendChild(del);
+      const sel = document.createElement("select");
+      var blank = document.createElement("option");
+      blank.value = ""; blank.textContent = "(留空)";
+      sel.appendChild(blank);
+      byRole("VS").forEach(function (p) {
+        var o = document.createElement("option");
+        o.value = p.code; o.textContent = p.name;
+        sel.appendChild(o);
+      });
+      sel.value = m.icu[w] || "";
+      if (sel.value !== (m.icu[w] || "")) sel.value = "";
+      sel.addEventListener("change", function () {
+        if (sel.value) m.icu[w] = sel.value; else delete m.icu[w];
+        save();
+      });
+      div.appendChild(head); div.appendChild(sel);
+      grid.appendChild(div);
+    });
+  }
+  document.getElementById("btnAddIcu").addEventListener("click", function () {
+    var name = document.getElementById("newIcuWard").value.trim();
+    if (!name) return;
+    if (state.icuWards.indexOf(name) >= 0) { alert("病房名稱重複"); return; }
+    state.icuWards.push(name);
+    document.getElementById("newIcuWard").value = "";
+    save(); renderIcu();
+  });
 
   // ---------- 4. prefs ----------
   function parseDays(text) {
@@ -1039,10 +1141,11 @@
     var stream = new Blob([bytes]).stream().pipeThrough(ds);
     return new Uint8Array(await new Response(stream).arrayBuffer());
   }
-  document.getElementById("btnShare").addEventListener("click", async function () {
+  async function makeShareUrl(mode) {
     var payload = {
-      t: "ntuhid1", y: Y, m: M,
+      t: "ntuhid1", mode: mode, y: Y, m: M,
       persons: state.persons, schedCodes: state.schedCodes, schedName: state.schedName,
+      icuWards: state.icuWards,
       month: mdat()
     };
     var bytes = new TextEncoder().encode(JSON.stringify(payload));
@@ -1052,9 +1155,10 @@
     var url = location.origin + location.pathname + "#d=" + frag;
     var box = document.getElementById("shareBox");
     box.value = url; box.hidden = false;
-    var copyBtn = document.getElementById("btnCopyShare");
-    copyBtn.hidden = false;
-  });
+    document.getElementById("btnCopyShare").hidden = false;
+  }
+  document.getElementById("btnShare").addEventListener("click", function () { makeShareUrl("edit"); });
+  document.getElementById("btnShareView").addEventListener("click", function () { makeShareUrl("view"); });
   document.getElementById("btnCopyShare").addEventListener("click", function () {
     var box = document.getElementById("shareBox");
     box.select();
@@ -1081,15 +1185,20 @@
         if (typeof payload.schedCodes[b.key] === "string") state.schedCodes[b.key] = payload.schedCodes[b.key];
       });
       if (payload.schedName) state.schedName = payload.schedName;
+      if (Array.isArray(payload.icuWards)) {
+        state.icuWards = payload.icuWards.filter(function (w) { return typeof w === "string" && w; });
+      }
       var id = payload.y + "-" + pad2(payload.m);
       state.months[id] = payload.month || {};
       ["holidays"].forEach(function (k) { if (!Array.isArray(state.months[id][k])) state.months[id][k] = []; });
-      ["duty", "vsOv", "assign", "off", "want"].forEach(function (k) {
+      ["duty", "vsOv", "assign", "off", "want", "icu"].forEach(function (k) {
         if (typeof state.months[id][k] !== "object" || !state.months[id][k]) state.months[id][k] = {};
       });
       save();
       setMonth(payload.y, payload.m);
       renderAll();
+      if (payload.mode === "view") sessionStorage.setItem(VONLY_KEY, "1");
+      applyViewOnly();
       setViewMode(true);
       calMsg("已載入分享的班表。", true);
     } catch (e) {
@@ -1101,7 +1210,25 @@
   // ---------- view mode ----------
   var vmFilter = "";
   var vmSelDay = 0;
+  var vmTab = "duty";
   var VIEW_KEY = "ntuhIdViewModeV1";
+  var VONLY_KEY = "ntuhIdViewOnlyV1";
+  function applyViewOnly() {
+    if (sessionStorage.getItem(VONLY_KEY) === "1") document.body.classList.add("viewonly");
+  }
+  var CONSULT = [
+    { label: "內科", r: "intR", v: "intV" },
+    { label: "外科", r: "surR", v: "surV" },
+    { label: "血腫", r: "hemR", v: "hemV" },
+    { label: "西址", r: "wesR", v: "wesV" },
+    { label: "14B", r: "b14", v: null },
+    { label: "5E3", r: "e53", v: null },
+    { label: "急診/值班", r: "dutR", v: "dutV" }
+  ];
+  function nameOf(code) {
+    var p = code ? byCode(code) : null;
+    return p ? p.name : "—";
+  }
   function isViewing() { return document.body.classList.contains("viewing"); }
   function setViewMode(on) {
     document.body.classList.toggle("viewing", !!on);
@@ -1125,9 +1252,53 @@
     for (var i = 0; i < rs.length; i++) if (rs[i].code === code) return i % 8;
     return -1;
   }
+  function renderConsult() {
+    var m = mdat();
+    var box = document.getElementById("vmConsult");
+    box.innerHTML = "";
+    var tbl = document.createElement("table");
+    tbl.className = "vm-ctable";
+    var thead = document.createElement("thead");
+    thead.innerHTML = "<tr><th>區塊</th><th>R</th><th>VS</th></tr>";
+    tbl.appendChild(thead);
+    var tb = document.createElement("tbody");
+    CONSULT.forEach(function (c) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = "<td class='cl'></td><td></td><td></td>";
+      tr.cells[0].textContent = c.label;
+      tr.cells[1].textContent = nameOf(m.assign[c.r]);
+      tr.cells[2].textContent = c.v ? nameOf(m.assign[c.v]) : "—";
+      tb.appendChild(tr);
+    });
+    var sub = document.createElement("tr");
+    sub.className = "vm-sub";
+    sub.innerHTML = "<td colspan='3'>ICU</td>";
+    tb.appendChild(sub);
+    state.icuWards.forEach(function (w) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = "<td class='cl'></td><td>—</td><td></td>";
+      tr.cells[0].textContent = w;
+      tr.cells[2].textContent = nameOf(m.icu[w]);
+      tb.appendChild(tr);
+    });
+    tbl.appendChild(tb);
+    box.appendChild(tbl);
+  }
+
   function renderView() {
     var m = mdat(), total = dim();
     document.getElementById("vmTitle").textContent = Y + " 年 " + M + " 月";
+    var duty = vmTab === "duty";
+    document.getElementById("vmTabDuty").className = duty ? "active" : "";
+    document.getElementById("vmTabConsult").className = duty ? "" : "active";
+    document.getElementById("vmLegend").hidden = !duty;
+    document.getElementById("vmGrid").hidden = !duty;
+    document.getElementById("vmConsult").hidden = duty;
+    if (!duty) {
+      document.getElementById("vmDetail").hidden = true;
+      renderConsult();
+      return;
+    }
     var lg = document.getElementById("vmLegend");
     lg.innerHTML = "";
     byRole("R").forEach(function (p) {
@@ -1190,6 +1361,8 @@
         "/值班 VS:" + (vsP ? vsP.name : "—") + (m.vsOv[dd] ? "(例外)" : "");
     } else { det.hidden = true; det.textContent = ""; }
   }
+  document.getElementById("vmTabDuty").addEventListener("click", function () { vmTab = "duty"; renderView(); });
+  document.getElementById("vmTabConsult").addEventListener("click", function () { vmTab = "consult"; renderView(); });
   document.getElementById("btnModeView").addEventListener("click", function () { setViewMode(true); });
   document.getElementById("btnVmEdit").addEventListener("click", function () { setViewMode(false); });
   document.getElementById("vmPrev").addEventListener("click", function () {
@@ -1212,7 +1385,7 @@
     ctx.arcTo(x, y, x + w, y, r);
     ctx.closePath();
   }
-  document.getElementById("btnVmExport").addEventListener("click", function () {
+  function exportDutyImage() {
     var m = mdat(), total = dim(), labels = rLabels();
     var FONT = '"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
     var W = 1080, pad = 48, gap = 10;
@@ -1297,14 +1470,76 @@
     cv.toBlob(function (blob) {
       triggerDownload(blob, fname);
     }, "image/png");
+  }
+  function exportConsultImage() {
+    var m = mdat();
+    var FONT = '"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif';
+    var W = 720, pad = 44, rowH = 54, titleH = 76, headH = 48;
+    var rows = CONSULT.length + 1 + state.icuWards.length;
+    var H = pad * 2 + titleH + headH + rows * rowH;
+    var cv = document.createElement("canvas");
+    cv.width = W * 2; cv.height = Math.round(H * 2);
+    var ctx = cv.getContext("2d");
+    ctx.scale(2, 2);
+    ctx.fillStyle = "#FFFFFF"; ctx.fillRect(0, 0, W, H);
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#1D2B2F";
+    ctx.font = "700 36px " + FONT;
+    ctx.fillText(Y + " 年 " + M + " 月照會表", pad, pad + 20);
+    var x0 = pad, x1 = W * 0.44, x2 = W * 0.72;
+    var y = pad + titleH;
+    ctx.font = "600 22px " + FONT;
+    ctx.fillStyle = "#5C7178";
+    ctx.fillText("區塊", x0, y + headH / 2);
+    ctx.fillText("R", x1, y + headH / 2);
+    ctx.fillText("VS", x2, y + headH / 2);
+    y += headH;
+    var zebra = false;
+    function drawRow(a, b, c, sub) {
+      if (sub) {
+        ctx.fillStyle = "#E3F1F2";
+        ctx.fillRect(pad - 12, y, W - pad * 2 + 24, rowH);
+        ctx.fillStyle = "#0B5F67";
+        ctx.font = "700 24px " + FONT;
+        ctx.fillText(a, x0, y + rowH / 2);
+      } else {
+        if (zebra) {
+          ctx.fillStyle = "#F5F8F8";
+          ctx.fillRect(pad - 12, y, W - pad * 2 + 24, rowH);
+        }
+        ctx.fillStyle = "#1D2B2F";
+        ctx.font = "600 24px " + FONT;
+        ctx.fillText(a, x0, y + rowH / 2);
+        ctx.font = "500 24px " + FONT;
+        ctx.fillText(b, x1, y + rowH / 2);
+        ctx.fillText(c, x2, y + rowH / 2);
+        zebra = !zebra;
+      }
+      y += rowH;
+    }
+    CONSULT.forEach(function (c) {
+      drawRow(c.label, nameOf(m.assign[c.r]), c.v ? nameOf(m.assign[c.v]) : "—", false);
+    });
+    drawRow("ICU", "", "", true);
+    zebra = false;
+    state.icuWards.forEach(function (w) {
+      drawRow(w, "—", nameOf(m.icu[w]), false);
+    });
+    var fname = "ID照會表_" + Y + pad2(M) + ".png";
+    cv.toBlob(function (blob) { triggerDownload(blob, fname); }, "image/png");
+  }
+  document.getElementById("btnVmExport").addEventListener("click", function () {
+    if (vmTab === "consult") exportConsultImage(); else exportDutyImage();
   });
 
   // ---------- render all ----------
   function renderAll() {
-    renderRoster(); renderAssign(); renderPrefs(); renderCal();
+    renderRoster(); renderAssign(); renderIcu(); renderPrefs(); renderCal();
     if (isViewing()) renderView();
   }
   renderAll();
+  applyViewOnly();
   if (localStorage.getItem(VIEW_KEY) === "1") setViewMode(true);
   tryLoadFromHash();
 })();
