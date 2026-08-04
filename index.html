@@ -3,653 +3,993 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NTUH ID 班表設定・產出 CSV</title>
+<title>NTUH ID 班表</title>
 <style>
   :root {
-    --bg: #f5f7fa;
-    --card: #ffffff;
-    --text: #1f2937;
-    --muted: #6b7280;
-    --border: #e5e7eb;
-    --primary: #2563eb;
-    --primary-soft: #dbeafe;
-    --danger: #dc2626;
-    --danger-soft: #fee2e2;
-    --ok: #059669;
-    --ok-soft: #d1fae5;
-    --weekend: #fff7ed;
-    --today: #eff6ff;
-    --shadow: 0 1px 3px rgba(0,0,0,.08);
+    --bg: #F5F8F8;
+    --card: #FFFFFF;
+    --ink: #1D2B2F;
+    --muted: #5C7178;
+    --line: #DCE6E8;
+    --accent: #0E7C86;
+    --accent-ink: #0B5F67;
+    --accent-soft: #E3F1F2;
+    --hol: #FBF1E3;
+    --hol-ink: #A8630C;
+    --warn: #C2410C;
+    --warn-soft: #FBE8DE;
+    --ok: #177245;
+    --ok-soft: #E2F2E9;
+    --shadow: 0 1px 3px rgba(29,43,47,.07);
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #111827;
-      --card: #1f2937;
-      --text: #f3f4f6;
-      --muted: #9ca3af;
-      --border: #374151;
-      --primary: #60a5fa;
-      --primary-soft: #1e3a5f;
-      --danger: #f87171;
-      --danger-soft: #4c1d1d;
-      --ok: #34d399;
-      --ok-soft: #14352a;
-      --weekend: #2a2320;
-      --today: #1c2a44;
+      --bg: #131A1C;
+      --card: #1B2427;
+      --ink: #E6EEF0;
+      --muted: #8FA3AA;
+      --line: #2C3A3E;
+      --accent: #4FB3BC;
+      --accent-ink: #7BC8CF;
+      --accent-soft: #173237;
+      --hol: #2B2318;
+      --hol-ink: #D69A4E;
+      --warn: #E5764A;
+      --warn-soft: #3A241B;
+      --ok: #4FBE7E;
+      --ok-soft: #1B3226;
       --shadow: 0 1px 3px rgba(0,0,0,.4);
     }
   }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: "Noto Sans TC", -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
     background: var(--bg);
-    color: var(--text);
-    line-height: 1.6;
+    color: var(--ink);
+    font-family: "Noto Sans TC", -apple-system, "PingFang TC", "Microsoft JhengHei", sans-serif;
+    line-height: 1.65;
+    font-size: 15px;
   }
-  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
-  header h1 { font-size: 1.4rem; margin: 8px 0 2px; }
-  header p { margin: 0 0 12px; color: var(--muted); font-size: .9rem; }
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
-    box-shadow: var(--shadow);
+  .wrap { max-width: 1060px; margin: 0 auto; padding: 20px 16px 64px; }
+
+  .masthead { padding: 8px 0 18px; }
+  .masthead .kicker {
+    font-size: .74rem; letter-spacing: .18em; color: var(--accent);
+    font-weight: 700; text-transform: uppercase;
   }
-  .card h2 { font-size: 1.05rem; margin: 0 0 10px; }
-  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-  label { font-size: .9rem; }
-  input, select, button, textarea {
-    font: inherit;
-    color: var(--text);
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 10px;
+  .masthead h1 { margin: 2px 0 4px; font-size: 1.5rem; letter-spacing: .02em; }
+  .masthead p { margin: 0; color: var(--muted); font-size: .88rem; }
+
+  section.card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+    box-shadow: var(--shadow); padding: 18px 20px; margin-bottom: 18px;
   }
-  input:focus, select:focus, textarea:focus { outline: 2px solid var(--primary); outline-offset: -1px; }
+  .sec-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 12px; flex-wrap: wrap; }
+  .sec-head .no {
+    font-variant-numeric: tabular-nums;
+    color: var(--accent); font-weight: 800; font-size: 1.05rem;
+  }
+  .sec-head h2 { margin: 0; font-size: 1.02rem; letter-spacing: .03em; }
+  .sec-head .note { color: var(--muted); font-size: .8rem; }
+  .hint { color: var(--muted); font-size: .8rem; margin: 8px 0 0; }
+
+  input, select, button {
+    font: inherit; color: var(--ink); background: var(--card);
+    border: 1px solid var(--line); border-radius: 8px; padding: 5px 9px;
+  }
+  select { cursor: pointer; }
+  input:focus-visible, select:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
   button { cursor: pointer; }
-  button.primary { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
-  button.danger { background: var(--danger-soft); border-color: var(--danger); color: var(--danger); }
-  button.ghost { background: transparent; }
-  button:disabled { opacity: .5; cursor: not-allowed; }
-  .hint { color: var(--muted); font-size: .82rem; margin: 6px 0 0; }
-  table { border-collapse: collapse; width: 100%; font-size: .9rem; }
-  th, td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; }
-  th { background: var(--primary-soft); }
-  .table-scroll { overflow-x: auto; }
-  tr.weekend td { background: var(--weekend); }
-  tr.today td { background: var(--today); }
-  td select { width: 100%; min-width: 110px; }
-  td.off select { border-style: dashed; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-  .chip {
-    display: inline-flex; align-items: center; gap: 6px;
-    background: var(--primary-soft); border: 1px solid var(--border);
-    border-radius: 999px; padding: 3px 10px; font-size: .85rem;
+  button.primary {
+    background: var(--accent); border-color: var(--accent);
+    color: #fff; font-weight: 700; letter-spacing: .04em;
   }
-  .chip .x { cursor: pointer; color: var(--danger); font-weight: 700; }
-  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
-  .stat {
-    border: 1px solid var(--border); border-radius: 10px; padding: 8px 10px; font-size: .88rem;
+  button.quiet { background: transparent; color: var(--muted); }
+  button.danger { color: var(--warn); border-color: var(--warn); background: transparent; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+  .empty-note {
+    border: 1px dashed var(--hol-ink); background: var(--hol); color: var(--hol-ink);
+    border-radius: 10px; padding: 10px 14px; font-size: .88rem; margin-bottom: 12px;
   }
-  .stat b { font-size: 1rem; }
-  .toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin: 10px 0; }
-  .msg { font-size: .85rem; margin-top: 6px; }
-  .msg.ok { color: var(--ok); }
-  .msg.err { color: var(--danger); }
-  a.back { color: var(--primary); text-decoration: none; font-size: .88rem; }
-  .unavail-input { width: 130px; }
+  .roster-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 760px) { .roster-grid { grid-template-columns: 1fr; } }
+  .roster-col h3 {
+    margin: 0 0 6px; font-size: .8rem; letter-spacing: .14em; color: var(--muted);
+    text-transform: uppercase;
+  }
+  table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+  th, td { border-bottom: 1px solid var(--line); padding: 5px 8px; text-align: left; }
+  thead th {
+    font-size: .74rem; letter-spacing: .1em; color: var(--muted); font-weight: 600;
+    border-bottom: 2px solid var(--line);
+  }
+  td.code { font-variant-numeric: tabular-nums; letter-spacing: .05em; color: var(--muted); }
+
+  .assign-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;
+  }
+  .assign-item {
+    border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .assign-item label {
+    font-size: .78rem; color: var(--muted); letter-spacing: .05em;
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  .assign-item label .tcode {
+    font-variant-numeric: tabular-nums; font-size: .72rem; color: var(--accent-ink);
+    letter-spacing: .12em;
+  }
+
+  .prefs th:first-child { width: 120px; }
+  .prefs input { width: 100%; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .78rem; color: var(--muted); margin-top: 8px; }
+  .dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 4px; vertical-align: -1px; }
+  .dot.off { background: var(--warn); }
+  .dot.want { background: var(--ok); }
+  .dot.holi { background: var(--hol); border: 1px solid var(--hol-ink); }
+
+  .duty-stats {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    position: sticky; top: 0; z-index: 5;
+    background: var(--card); padding: 8px 0; margin-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .stat-chip {
+    display: inline-flex; gap: 7px; align-items: baseline;
+    border: 1px solid var(--line); border-radius: 999px; padding: 2px 12px;
+    font-size: .84rem; background: var(--accent-soft);
+  }
+  .stat-chip b { font-weight: 700; }
+  .stat-chip .nums { font-variant-numeric: tabular-nums; color: var(--accent-ink); font-weight: 700; }
+  .stat-chip.zero { background: transparent; }
+  .stat-chip.zero b, .stat-chip.zero .nums { color: var(--muted); font-weight: 500; }
+
+  .cal-toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 10px; }
+  .cal-toolbar .spacer { flex: 1; }
+  .cal-msg { font-size: .82rem; }
+  .cal-msg.ok { color: var(--ok); }
+  .cal-msg.warn { color: var(--warn); }
+  .cal-scroll { overflow-x: auto; }
+  .cal-grid {
+    display: grid; grid-template-columns: repeat(7, minmax(100px, 1fr));
+    gap: 6px; min-width: 740px;
+  }
+  .dow { text-align: center; font-size: .74rem; letter-spacing: .14em; color: var(--muted); padding: 2px 0; }
+  .dow.wkend { color: var(--hol-ink); }
+  .day-cell {
+    border: 1px solid var(--line); border-radius: 10px; padding: 6px;
+    display: flex; flex-direction: column; gap: 5px;
+    background: var(--card); min-height: 98px;
+  }
+  .day-cell.empty { border: none; background: transparent; min-height: 0; }
+  .day-cell.holiday { background: var(--hol); }
+  .cell-head { display: flex; justify-content: space-between; align-items: center; }
+  .dnum { font-variant-numeric: tabular-nums; font-weight: 700; font-size: .95rem; }
+  .day-cell.holiday .dnum { color: var(--hol-ink); }
+  .tag-rest { font-size: .66rem; color: var(--hol-ink); letter-spacing: .1em; }
+  .holi-btn {
+    font-size: .66rem; padding: 1px 8px; border-radius: 999px;
+    border: 1px solid var(--line); background: transparent; color: var(--muted); cursor: pointer;
+  }
+  .day-cell.holiday .holi-btn { border-color: var(--hol-ink); color: var(--hol-ink); font-weight: 700; }
+  .day-cell select { width: 100%; font-size: .8rem; padding: 3px 4px; min-width: 0; }
+  .vs-row { display: flex; align-items: center; gap: 4px; }
+  .vs-row .vlab { font-size: .64rem; color: var(--muted); letter-spacing: .1em; }
+  .vs-row button.undo { font-size: .66rem; padding: 1px 5px; background: transparent; color: var(--muted); border-color: transparent; }
+  select.overridden { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  .flag {
+    display: inline-block; font-size: .7rem; font-weight: 700; border-radius: 6px;
+    padding: 0 6px; align-self: flex-start;
+  }
+  .flag.off { color: var(--warn); background: var(--warn-soft); }
+  .flag.want { color: var(--ok); background: var(--ok-soft); }
+
+  .out-table td, .out-table th { padding: 6px 8px; }
+  .out-table input.sched-code {
+    width: 76px; font-variant-numeric: tabular-nums; letter-spacing: .1em; text-transform: uppercase;
+  }
+  .out-table td.fname { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .82rem; }
+  .out-msg { margin-top: 10px; font-size: .84rem; }
+  .out-msg.warn { color: var(--warn); }
+  .out-msg.ok { color: var(--ok); }
+  .share-box { width: 100%; margin-top: 10px; font-size: .78rem; padding: 8px; word-break: break-all; }
+  textarea.share-box {
+    font-family: inherit; color: var(--muted); background: var(--bg);
+    border: 1px solid var(--line); border-radius: 8px; min-height: 74px; resize: vertical;
+  }
+
   @media (max-width: 640px) {
-    .wrap { padding: 10px; }
-    th, td { padding: 4px 6px; font-size: .82rem; }
+    body { font-size: 14px; }
+    section.card { padding: 14px; }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>NTUH ID 班表設定・產出 CSV</h1>
-    <p>設定人員與班別、排定每日值班,一鍵匯出 CSV(可直接用 Excel 開啟)。資料只存在你的瀏覽器 localStorage,不會上傳。</p>
+  <header class="masthead">
+    <div class="kicker">NTUH · Infectious Diseases</div>
+    <h1>感染科班表</h1>
+    <p>由上而下依序設定;資料自動儲存於此瀏覽器,不會上傳。名單與班表代號由設定檔載入。</p>
   </header>
 
-  <!-- 月份選擇 -->
+  <!-- 1. 名單 -->
   <section class="card">
-    <h2>1. 選擇月份</h2>
-    <div class="row">
-      <label>年份
-        <select id="selYear"></select>
-      </label>
-      <label>月份
-        <select id="selMonth"></select>
-      </label>
-      <span class="hint" id="monthInfo"></span>
+    <div class="sec-head"><span class="no">1</span><h2>人員名單與值班配對</h2>
+      <span class="note">R 的「值班對應 VS」為值班 VS 的自動帶出依據</span></div>
+    <div class="empty-note" id="emptyNote" hidden>
+      尚未載入名單──請點下方「匯入設定檔」載入(設定檔由排班負責人提供),或手動新增人員。
+    </div>
+    <div class="roster-grid">
+      <div class="roster-col">
+        <h3>主治醫師 VS</h3>
+        <table id="tblVs">
+          <thead><tr><th>姓名</th><th>代號</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      <div class="roster-col">
+        <h3>住院醫師 R</h3>
+        <table id="tblR">
+          <thead><tr><th>姓名</th><th>代號</th><th>值班對應 VS</th><th></th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <select id="newRole" style="width:76px"><option value="R">R</option><option value="VS">VS</option></select>
+      <input id="newName" placeholder="姓名" style="width:120px" maxlength="10">
+      <input id="newCode" placeholder="六碼代號" style="width:110px" maxlength="6" inputmode="numeric">
+      <button class="primary" id="btnAddPerson">新增</button>
+      <span style="flex:1"></span>
+      <button id="btnImportCfg">匯入設定檔</button>
+      <button id="btnExportCfg">匯出設定檔</button>
+      <input type="file" id="cfgFile" accept=".json,application/json" hidden>
     </div>
   </section>
 
-  <!-- 班別設定 -->
+  <!-- 2. 月份 -->
   <section class="card">
-    <h2>2. 班別設定</h2>
+    <div class="sec-head"><span class="no">2</span><h2>排班月份</h2></div>
     <div class="row">
-      <input id="inpShift" type="text" placeholder="班別名稱,如:一線值班" maxlength="20">
-      <button class="primary" id="btnAddShift">新增班別</button>
+      <select id="selYear"></select>
+      <select id="selMonth"></select>
+      <span class="hint" id="monthInfo" style="margin:0"></span>
     </div>
-    <div class="chips" id="shiftChips"></div>
-    <p class="hint">每天每個班別排一位人員。預設班別為「值班」,可自行新增(如:一線、二線、會診班)。</p>
   </section>
 
-  <!-- 人員設定 -->
+  <!-- 3. 各區負責人 -->
   <section class="card">
-    <h2>3. 人員設定</h2>
-    <div class="row">
-      <input id="inpPersonId" type="text" placeholder="代號/員編(選填)" maxlength="12" style="width:150px">
-      <input id="inpPersonName" type="text" placeholder="姓名" maxlength="20" style="width:150px">
-      <button class="primary" id="btnAddPerson">新增人員</button>
+    <div class="sec-head"><span class="no">3</span><h2>本月各區負責人</h2>
+      <span class="note">可留空;右上角為輸出檔班表代號</span></div>
+    <div class="assign-grid" id="assignGrid"></div>
+  </section>
+
+  <!-- 4. 預假/預班 -->
+  <section class="card">
+    <div class="sec-head"><span class="no">4</span><h2>值班 R 預假/預班</h2>
+      <span class="note">由排班負責人代填,日期以逗號分隔</span></div>
+    <table class="prefs" id="tblPrefs">
+      <thead><tr><th>R</th><th>預假(不排值班)</th><th>預班(想值班)</th></tr></thead>
+      <tbody></tbody>
+    </table>
+    <div class="legend">
+      <span><span class="dot off"></span>預假</span>
+      <span><span class="dot want"></span>預班</span>
+      <span><span class="dot holi"></span>週休/國定假日</span>
     </div>
-    <div class="table-scroll" style="margin-top:10px">
-      <table id="personTable">
-        <thead>
-          <tr><th style="width:110px">代號</th><th style="width:130px">姓名</th><th>本月預假日期(不排班)</th><th style="width:70px">刪除</th></tr>
-        </thead>
+  </section>
+
+  <!-- 5. 月曆排班 -->
+  <section class="card">
+    <div class="sec-head"><span class="no">5</span><h2>每日值班</h2>
+      <span class="note">選 R 即自動帶出對應 VS,可逐日改選</span></div>
+    <div class="duty-stats" id="dutyStats"></div>
+    <div class="cal-toolbar">
+      <button class="primary" id="btnAuto">自動排班(填滿空格)</button>
+      <button class="danger" id="btnClearDuty">清空本月值班</button>
+      <span class="spacer"></span>
+      <span class="cal-msg" id="calMsg"></span>
+    </div>
+    <div class="cal-scroll">
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <p class="hint">平日格點「平日」鈕可切換為國定假日(整格變色並計入假日班)。R 選單中標注當日預假/預班者;排到預假者顯示紅色警示但不阻擋。上方班數列隨排班即時更新。</p>
+  </section>
+
+  <!-- 6. 產出 CSV -->
+  <section class="card">
+    <div class="sec-head"><span class="no">6</span><h2>產出 CSV</h2>
+      <span class="note">檔名:班表代號_年月.csv;內容一律以代號顯示</span></div>
+    <div class="row">
+      <button class="primary" id="btnDlAll">全部下載(12 檔)</button>
+      <span class="out-msg" id="outMsg"></span>
+    </div>
+    <div style="overflow-x:auto;margin-top:10px">
+      <table class="out-table" id="tblOut">
+        <thead><tr><th>區塊</th><th>班表代號</th><th>檔名</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
-    <p class="hint">預假日期以逗號分隔(例:5,12,20),自動排班時會避開;手動排班仍可指定。</p>
+    <p class="hint">CSV 含 UTF-8 BOM,Excel 開啟不亂碼。平日班型:平日 8 起填本月負責人、17 起空白,假日 8 起空白。值班班型(急診/值班):平日 8 起填本月負責人、17 起填當日值班人員,假日 8 起填當日值班人員。瀏覽器若詢問「允許下載多個檔案」請按允許。</p>
   </section>
 
-  <!-- 班表 -->
+  <!-- 7. 分享 -->
   <section class="card">
-    <h2>4. 班表</h2>
-    <div class="toolbar">
-      <button class="primary" id="btnAuto">自動排班(填滿空格)</button>
-      <label><input type="checkbox" id="chkAvoidConsecutive" checked> 避免連續兩天值班</label>
-      <label><input type="checkbox" id="chkBalanceWeekend" checked> 平均分配假日班</label>
-      <button class="danger" id="btnClear">清空本月班表</button>
-    </div>
-    <div class="msg" id="autoMsg"></div>
-    <div class="table-scroll">
-      <table id="schedTable">
-        <thead><tr id="schedHead"></tr></thead>
-        <tbody id="schedBody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- 統計 -->
-  <section class="card">
-    <h2>5. 班數統計</h2>
-    <div class="stat-grid" id="statGrid"></div>
-  </section>
-
-  <!-- 匯出 -->
-  <section class="card">
-    <h2>6. 產出 CSV</h2>
+    <div class="sec-head"><span class="no">7</span><h2>分享班表</h2>
+      <span class="note">把本月班表(含名單)打包成網址,傳給同事開啟即載入</span></div>
     <div class="row">
-      <button class="primary" id="btnCsvSchedule">匯出班表 CSV</button>
-      <button class="primary" id="btnCsvStats">匯出統計 CSV</button>
+      <button class="primary" id="btnShare">產生分享網址</button>
+      <button id="btnCopyShare" hidden>複製網址</button>
     </div>
-    <p class="hint">CSV 含 UTF-8 BOM,Excel 開啟中文不會亂碼。班表格式:日期、星期、各班別人員(代號+姓名)。</p>
+    <textarea class="share-box" id="shareBox" readonly hidden></textarea>
+    <p class="hint">網址中 # 之後的內容只在瀏覽器本地解讀,不會被送到伺服器。對方開啟後會先詢問是否載入;載入會覆蓋其瀏覽器中同月份的資料與名單。</p>
   </section>
 </div>
 
 <script>
 (function () {
   "use strict";
+  var K = "ntuhIdScheduleV2";
+  var WD = ["日", "一", "二", "三", "四", "五", "六"];
+  var BLOCKS = [
+    { key: "intR", label: "內科 R",       role: "R",  type: "plain" },
+    { key: "intV", label: "內科 VS",      role: "VS", type: "plain" },
+    { key: "surR", label: "外科 R",       role: "R",  type: "plain" },
+    { key: "surV", label: "外科 VS",      role: "VS", type: "plain" },
+    { key: "hemR", label: "血腫 R",       role: "R",  type: "plain" },
+    { key: "hemV", label: "血腫 VS",      role: "VS", type: "plain" },
+    { key: "wesR", label: "西址 R",       role: "R",  type: "plain" },
+    { key: "wesV", label: "西址 VS",      role: "VS", type: "plain" },
+    { key: "b14",  label: "14B",          role: "R",  type: "plain" },
+    { key: "e53",  label: "5E3",          role: "R",  type: "plain" },
+    { key: "dutR", label: "急診/值班 R",  role: "R",  type: "duty" },
+    { key: "dutV", label: "急診/值班 VS", role: "VS", type: "duty" }
+  ];
 
-  var STORE_KEY = "idScheduleV1";
-  var WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
-
-  // ---------- 資料 ----------
-  // state = { shifts:[...], persons:[{id,name}], months:{ "2026-08": { unavail:{personKey:[day..]}, assign:{ "day|shift": personKey } } } }
-  var state = load();
-
+  // ---------- state ----------
+  function blankCodes() {
+    var o = {};
+    BLOCKS.forEach(function (b) { o[b.key] = ""; });
+    return o;
+  }
   function load() {
     try {
-      var raw = localStorage.getItem(STORE_KEY);
-      if (raw) {
-        var s = JSON.parse(raw);
-        if (s && Array.isArray(s.shifts) && Array.isArray(s.persons) && s.months) return s;
+      var s = JSON.parse(localStorage.getItem(K));
+      if (s && Array.isArray(s.persons) && s.months) {
+        if (!s.schedCodes) s.schedCodes = blankCodes();
+        if (!s.schedName) s.schedName = "感染科";
+        return s;
       }
-    } catch (e) { /* 壞資料就重來 */ }
-    return { shifts: ["值班"], persons: [], months: {} };
+    } catch (e) {}
+    return { persons: [], schedName: "感染科", schedCodes: blankCodes(), months: {} };
   }
-  function save() {
-    localStorage.setItem(STORE_KEY, JSON.stringify(state));
-  }
-
-  function personKey(p) { return p.id ? p.id : "n:" + p.name; }
-  function personLabel(p) { return p.id ? p.id + " " + p.name : p.name; }
-  function findPerson(key) {
-    for (var i = 0; i < state.persons.length; i++) {
-      if (personKey(state.persons[i]) === key) return state.persons[i];
-    }
-    return null;
-  }
+  var state = load();
+  function save() { localStorage.setItem(K, JSON.stringify(state)); }
 
   var now = new Date();
-  var curYear = now.getFullYear();
-  var curMonth = now.getMonth() + 1; // 1-12
+  var Y = now.getFullYear(), M = now.getMonth() + 1;
+  function mid() { return Y + "-" + String(M).padStart(2, "0"); }
+  function mdat() {
+    var m = state.months[mid()];
+    if (!m) m = state.months[mid()] = { holidays: [], duty: {}, vsOv: {}, assign: {}, off: {}, want: {} };
+    return m;
+  }
+  function dim() { return new Date(Y, M, 0).getDate(); }
+  function wd(d) { return new Date(Y, M - 1, d).getDay(); }
+  function isHol(d) { var w = wd(d); return w === 0 || w === 6 || mdat().holidays.indexOf(d) >= 0; }
+  function byRole(role) { return state.persons.filter(function (p) { return p.role === role; }); }
+  function byCode(code) {
+    for (var i = 0; i < state.persons.length; i++) if (state.persons[i].code === code) return state.persons[i];
+    return null;
+  }
+  function pad2(n) { return String(n).padStart(2, "0"); }
 
-  function monthId() {
-    return curYear + "-" + String(curMonth).padStart(2, "0");
-  }
-  function monthData() {
-    var id = monthId();
-    if (!state.months[id]) state.months[id] = { unavail: {}, assign: {} };
-    if (!state.months[id].unavail) state.months[id].unavail = {};
-    if (!state.months[id].assign) state.months[id].assign = {};
-    return state.months[id];
-  }
-  function daysInMonth() {
-    return new Date(curYear, curMonth, 0).getDate();
-  }
-  function weekdayOf(day) {
-    return new Date(curYear, curMonth - 1, day).getDay();
-  }
-  function isWeekend(day) {
-    var w = weekdayOf(day);
-    return w === 0 || w === 6;
-  }
+  // ---------- 1. roster ----------
+  function renderRoster() {
+    document.getElementById("emptyNote").hidden = state.persons.length > 0;
+    var vsBody = document.querySelector("#tblVs tbody");
+    var rBody = document.querySelector("#tblR tbody");
+    vsBody.innerHTML = ""; rBody.innerHTML = "";
 
-  // ---------- 月份選擇 ----------
-  var selYear = document.getElementById("selYear");
-  var selMonth = document.getElementById("selMonth");
-  (function initMonthPickers() {
-    for (var y = curYear - 1; y <= curYear + 2; y++) {
+    byRole("VS").forEach(function (p) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = '<td></td><td class="code"></td><td></td>';
+      tr.cells[0].textContent = p.name;
+      tr.cells[1].textContent = p.code;
+      var del = document.createElement("button");
+      del.className = "quiet"; del.textContent = "移除"; del.style.fontSize = ".76rem";
+      del.addEventListener("click", function () { removePerson(p); });
+      tr.cells[2].appendChild(del);
+      vsBody.appendChild(tr);
+    });
+
+    byRole("R").forEach(function (p) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = '<td></td><td class="code"></td><td></td><td></td>';
+      tr.cells[0].textContent = p.name;
+      tr.cells[1].textContent = p.code;
+      const sel = document.createElement("select");
+      byRole("VS").forEach(function (v) {
+        var o = document.createElement("option");
+        o.value = v.code; o.textContent = v.name;
+        sel.appendChild(o);
+      });
+      sel.value = p.vs || "";
+      sel.addEventListener("change", function () { p.vs = sel.value; save(); renderCal(); });
+      tr.cells[2].appendChild(sel);
+      var del = document.createElement("button");
+      del.className = "quiet"; del.textContent = "移除"; del.style.fontSize = ".76rem";
+      del.addEventListener("click", function () { removePerson(p); });
+      tr.cells[3].appendChild(del);
+      rBody.appendChild(tr);
+    });
+  }
+  function removePerson(p) {
+    if (!confirm("移除 " + p.name + "(" + p.code + ")?其排班會一併清除。")) return;
+    state.persons = state.persons.filter(function (v) { return v !== p; });
+    Object.keys(state.months).forEach(function (id) {
+      var m = state.months[id];
+      Object.keys(m.duty).forEach(function (d) { if (m.duty[d] === p.code) delete m.duty[d]; });
+      Object.keys(m.vsOv).forEach(function (d) { if (m.vsOv[d] === p.code) delete m.vsOv[d]; });
+      Object.keys(m.assign).forEach(function (k) { if (m.assign[k] === p.code) delete m.assign[k]; });
+      delete m.off[p.code]; delete m.want[p.code];
+    });
+    save(); renderAll();
+  }
+  document.getElementById("btnAddPerson").addEventListener("click", function () {
+    var role = document.getElementById("newRole").value;
+    var name = document.getElementById("newName").value.trim();
+    var code = document.getElementById("newCode").value.trim();
+    if (!name || !/^\d{6}$/.test(code)) { alert("請輸入姓名與六碼數字代號"); return; }
+    if (byCode(code)) { alert("代號已存在:" + byCode(code).name); return; }
+    var p = { role: role, name: name, code: code };
+    if (role === "R") { var v = byRole("VS")[0]; p.vs = v ? v.code : ""; }
+    state.persons.push(p);
+    document.getElementById("newName").value = ""; document.getElementById("newCode").value = "";
+    save(); renderAll();
+  });
+
+  // ---------- config import/export ----------
+  document.getElementById("btnImportCfg").addEventListener("click", function () {
+    document.getElementById("cfgFile").click();
+  });
+  document.getElementById("cfgFile").addEventListener("change", function () {
+    var inp = this;
+    var f = inp.files[0];
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onerror = function () { inp.value = ""; alert("\u8b80\u53d6\u6a94\u6848\u5931\u6557\u3002"); };
+    reader.onload = function () {
+      inp.value = "";
+      try {
+        var cfg = JSON.parse(reader.result);
+        if (cfg.type !== "ntuh-id-schedule-config" || !Array.isArray(cfg.persons)) throw new Error("bad");
+        if (!confirm("匯入設定檔?將覆蓋目前的名單、配對與班表代號(各月排班資料保留)。")) return;
+        state.persons = cfg.persons.filter(function (p) {
+          return p && (p.role === "R" || p.role === "VS") && p.name && /^\d{6}$/.test(p.code || "");
+        });
+        if (cfg.schedCodes) BLOCKS.forEach(function (b) {
+          if (typeof cfg.schedCodes[b.key] === "string") state.schedCodes[b.key] = cfg.schedCodes[b.key];
+        });
+        if (typeof cfg.schedName === "string" && cfg.schedName) state.schedName = cfg.schedName;
+        save(); renderAll();
+        alert("已匯入:VS " + byRole("VS").length + " 位、R " + byRole("R").length + " 位。");
+      } catch (e) {
+        alert("設定檔格式錯誤,無法匯入。");
+      }
+    };
+    reader.readAsText(f);
+  });
+  document.getElementById("btnExportCfg").addEventListener("click", function () {
+    var cfg = {
+      type: "ntuh-id-schedule-config", version: 1,
+      schedName: state.schedName, persons: state.persons, schedCodes: state.schedCodes
+    };
+    var blob = new Blob([JSON.stringify(cfg, null, 2)], { type: "application/json" });
+    triggerDownload(blob, "ID班表設定檔.json");
+  });
+
+  // ---------- 2. month ----------
+  var selY = document.getElementById("selYear"), selM = document.getElementById("selMonth");
+  (function () {
+    for (var y = Y - 1; y <= Y + 2; y++) {
       var o = document.createElement("option");
       o.value = y; o.textContent = y + " 年(民國 " + (y - 1911) + ")";
-      selYear.appendChild(o);
+      selY.appendChild(o);
     }
     for (var m = 1; m <= 12; m++) {
       var o2 = document.createElement("option");
       o2.value = m; o2.textContent = m + " 月";
-      selMonth.appendChild(o2);
+      selM.appendChild(o2);
     }
-    selYear.value = curYear;
-    selMonth.value = curMonth;
-    selYear.addEventListener("change", function () { curYear = +selYear.value; renderAll(); });
-    selMonth.addEventListener("change", function () { curMonth = +selMonth.value; renderAll(); });
+    selY.value = Y; selM.value = M;
+    selY.addEventListener("change", function () { Y = +selY.value; renderAll(); });
+    selM.addEventListener("change", function () { M = +selM.value; renderAll(); });
   })();
+  function setMonth(y, m) {
+    Y = y; M = m;
+    if (![].slice.call(selY.options).some(function (o) { return +o.value === y; })) {
+      var o = document.createElement("option");
+      o.value = y; o.textContent = y + " 年(民國 " + (y - 1911) + ")";
+      selY.appendChild(o);
+    }
+    selY.value = Y; selM.value = M;
+  }
 
-  // ---------- 班別 ----------
-  var inpShift = document.getElementById("inpShift");
-  document.getElementById("btnAddShift").addEventListener("click", function () {
-    var name = inpShift.value.trim();
-    if (!name) return;
-    if (state.shifts.indexOf(name) >= 0) { alert("班別已存在"); return; }
-    state.shifts.push(name);
-    inpShift.value = "";
-    save(); renderAll();
-  });
-
-  function renderShifts() {
-    var box = document.getElementById("shiftChips");
-    box.innerHTML = "";
-    state.shifts.forEach(function (s) {
-      var chip = document.createElement("span");
-      chip.className = "chip";
-      var t = document.createElement("span");
-      t.textContent = s;
-      chip.appendChild(t);
-      if (state.shifts.length > 1) {
-        var x = document.createElement("span");
-        x.className = "x";
-        x.textContent = "×";
-        x.title = "刪除班別";
-        x.addEventListener("click", function () {
-          if (!confirm("刪除班別「" + s + "」?各月份此班別的排班會一併移除。")) return;
-          state.shifts = state.shifts.filter(function (v) { return v !== s; });
-          Object.keys(state.months).forEach(function (mid) {
-            var a = state.months[mid].assign;
-            Object.keys(a).forEach(function (k) {
-              if (k.split("|")[1] === s) delete a[k];
-            });
-          });
-          save(); renderAll();
-        });
-        chip.appendChild(x);
-      }
-      box.appendChild(chip);
+  // ---------- 3. assignments ----------
+  function renderAssign() {
+    var m = mdat();
+    var grid = document.getElementById("assignGrid");
+    grid.innerHTML = "";
+    BLOCKS.forEach(function (b) {
+      var div = document.createElement("div");
+      div.className = "assign-item";
+      var lab = document.createElement("label");
+      lab.innerHTML = "<span></span><span class='tcode'></span>";
+      lab.children[0].textContent = b.label;
+      lab.children[1].textContent = state.schedCodes[b.key] || "—";
+      const sel = document.createElement("select");
+      var blank = document.createElement("option");
+      blank.value = ""; blank.textContent = "(留空)";
+      sel.appendChild(blank);
+      byRole(b.role).forEach(function (p) {
+        var o = document.createElement("option");
+        o.value = p.code; o.textContent = p.name;
+        sel.appendChild(o);
+      });
+      sel.value = m.assign[b.key] || "";
+      if (sel.value !== (m.assign[b.key] || "")) sel.value = "";
+      sel.addEventListener("change", function () {
+        if (sel.value) m.assign[b.key] = sel.value; else delete m.assign[b.key];
+        save();
+      });
+      div.appendChild(lab); div.appendChild(sel);
+      grid.appendChild(div);
     });
   }
 
-  // ---------- 人員 ----------
-  var inpPersonId = document.getElementById("inpPersonId");
-  var inpPersonName = document.getElementById("inpPersonName");
-  document.getElementById("btnAddPerson").addEventListener("click", addPerson);
-  inpPersonName.addEventListener("keydown", function (e) { if (e.key === "Enter") addPerson(); });
-
-  function addPerson() {
-    var id = inpPersonId.value.trim();
-    var name = inpPersonName.value.trim();
-    if (!name) { alert("請輸入姓名"); return; }
-    var p = { id: id, name: name };
-    var key = personKey(p);
-    if (findPerson(key)) { alert("此人員(相同代號或姓名)已存在"); return; }
-    state.persons.push(p);
-    inpPersonId.value = ""; inpPersonName.value = "";
-    save(); renderAll();
-  }
-
-  function parseUnavail(text) {
-    var max = daysInMonth();
-    var out = [];
+  // ---------- 4. prefs ----------
+  function parseDays(text) {
+    var out = [], max = dim();
     String(text).split(/[,,、\s]+/).forEach(function (t) {
       var d = parseInt(t, 10);
       if (d >= 1 && d <= max && out.indexOf(d) < 0) out.push(d);
     });
-    out.sort(function (a, b) { return a - b; });
-    return out;
+    return out.sort(function (a, b) { return a - b; });
   }
-
-  function renderPersons() {
-    var md = monthData();
-    var tbody = document.querySelector("#personTable tbody");
+  function renderPrefs() {
+    var m = mdat();
+    var tbody = document.querySelector("#tblPrefs tbody");
     tbody.innerHTML = "";
-    state.persons.forEach(function (p) {
-      var key = personKey(p);
+    byRole("R").forEach(function (p) {
       var tr = document.createElement("tr");
-
-      var tdId = document.createElement("td");
-      tdId.textContent = p.id || "—";
-      tr.appendChild(tdId);
-
-      var tdName = document.createElement("td");
-      tdName.textContent = p.name;
-      tr.appendChild(tdName);
-
-      var tdU = document.createElement("td");
-      var inp = document.createElement("input");
-      inp.className = "unavail-input";
-      inp.type = "text";
-      inp.placeholder = "例:5,12,20";
-      inp.value = (md.unavail[key] || []).join(",");
-      inp.addEventListener("change", function () {
-        var days = parseUnavail(inp.value);
-        if (days.length) md.unavail[key] = days; else delete md.unavail[key];
-        inp.value = days.join(",");
-        save(); renderSchedule(); renderStats();
-      });
-      tdU.appendChild(inp);
-      tr.appendChild(tdU);
-
-      var tdDel = document.createElement("td");
-      var del = document.createElement("button");
-      del.className = "danger";
-      del.textContent = "刪除";
-      del.addEventListener("click", function () {
-        if (!confirm("刪除人員「" + personLabel(p) + "」?各月份其排班會一併移除。")) return;
-        state.persons = state.persons.filter(function (v) { return personKey(v) !== key; });
-        Object.keys(state.months).forEach(function (mid) {
-          var m = state.months[mid];
-          delete m.unavail[key];
-          Object.keys(m.assign).forEach(function (k) {
-            if (m.assign[k] === key) delete m.assign[k];
-          });
+      tr.innerHTML = "<td></td><td></td><td></td>";
+      tr.cells[0].textContent = p.name;
+      [["off", 1], ["want", 2]].forEach(function (cfg) {
+        var kind = cfg[0], idx = cfg[1];
+        const inp = document.createElement("input");
+        inp.placeholder = "例:5,12,20";
+        inp.value = (m[kind][p.code] || []).join(",");
+        inp.addEventListener("change", function () {
+          var days = parseDays(inp.value);
+          if (days.length) m[kind][p.code] = days; else delete m[kind][p.code];
+          inp.value = days.join(",");
+          save(); renderCal();
         });
-        save(); renderAll();
+        tr.cells[idx].appendChild(inp);
       });
-      tdDel.appendChild(del);
-      tr.appendChild(tdDel);
-
       tbody.appendChild(tr);
     });
-    if (!state.persons.length) {
+    if (!byRole("R").length) {
       var tr0 = document.createElement("tr");
       var td0 = document.createElement("td");
-      td0.colSpan = 4;
-      td0.style.color = "var(--muted)";
-      td0.textContent = "尚未新增人員";
+      td0.colSpan = 3; td0.style.color = "var(--muted)";
+      td0.textContent = "名單中尚無 R";
       tr0.appendChild(td0);
       tbody.appendChild(tr0);
     }
   }
 
-  // ---------- 班表 ----------
-  function assignKey(day, shift) { return day + "|" + shift; }
-
-  function renderSchedule() {
-    var md = monthData();
-    var head = document.getElementById("schedHead");
-    head.innerHTML = "";
-    ["日期", "星期"].concat(state.shifts).forEach(function (h) {
-      var th = document.createElement("th");
-      th.textContent = h;
-      head.appendChild(th);
+  // ---------- 5. calendar ----------
+  function renderDutyStats() {
+    var m = mdat(), total = dim();
+    var bar = document.getElementById("dutyStats");
+    bar.innerHTML = "";
+    byRole("R").forEach(function (p) {
+      var wk = 0, hol = 0;
+      for (var d = 1; d <= total; d++) {
+        if (m.duty[d] === p.code) { if (isHol(d)) hol++; else wk++; }
+      }
+      var chip = document.createElement("span");
+      chip.className = "stat-chip" + (wk + hol ? "" : " zero");
+      var b = document.createElement("b"); b.textContent = p.name;
+      var n = document.createElement("span"); n.className = "nums";
+      n.textContent = wk + " 平 " + hol + " 假";
+      chip.appendChild(b); chip.appendChild(n);
+      bar.appendChild(chip);
     });
+  }
 
-    var body = document.getElementById("schedBody");
-    body.innerHTML = "";
-    var total = daysInMonth();
-    var today = new Date();
-    var isThisMonth = today.getFullYear() === curYear && today.getMonth() + 1 === curMonth;
+  function renderCal() {
+    var m = mdat();
+    var grid = document.getElementById("calGrid");
+    grid.innerHTML = "";
+    var total = dim();
+
+    WD.forEach(function (w, i) {
+      var h = document.createElement("div");
+      h.className = "dow" + (i === 0 || i === 6 ? " wkend" : "");
+      h.textContent = w;
+      grid.appendChild(h);
+    });
+    for (var i = 0; i < wd(1); i++) {
+      var e = document.createElement("div");
+      e.className = "day-cell empty";
+      grid.appendChild(e);
+    }
 
     for (let d = 1; d <= total; d++) {
-      var tr = document.createElement("tr");
-      if (isWeekend(d)) tr.className = "weekend";
-      if (isThisMonth && today.getDate() === d) tr.className += " today";
+      const cell = document.createElement("div");
+      cell.className = "day-cell" + (isHol(d) ? " holiday" : "");
+      cell.dataset.d = d;
 
-      var tdD = document.createElement("td");
-      tdD.textContent = curMonth + "/" + d;
-      tr.appendChild(tdD);
-
-      var tdW = document.createElement("td");
-      tdW.textContent = WEEKDAYS[weekdayOf(d)];
-      tr.appendChild(tdW);
-
-      state.shifts.forEach(function (shift) {
-        var td = document.createElement("td");
-        var sel = document.createElement("select");
-        var blank = document.createElement("option");
-        blank.value = ""; blank.textContent = "—";
-        sel.appendChild(blank);
-        state.persons.forEach(function (p) {
-          var key = personKey(p);
-          var o = document.createElement("option");
-          o.value = key;
-          var off = (md.unavail[key] || []).indexOf(d) >= 0;
-          o.textContent = personLabel(p) + (off ? "(預假)" : "");
-          sel.appendChild(o);
+      var head = document.createElement("div");
+      head.className = "cell-head";
+      var num = document.createElement("span");
+      num.className = "dnum"; num.textContent = d;
+      head.appendChild(num);
+      var w = wd(d);
+      if (w === 0 || w === 6) {
+        var rest = document.createElement("span");
+        rest.className = "tag-rest"; rest.textContent = "週休";
+        head.appendChild(rest);
+      } else {
+        var hb = document.createElement("button");
+        hb.className = "holi-btn";
+        hb.textContent = m.holidays.indexOf(d) >= 0 ? "國定假日" : "平日";
+        hb.title = "切換國定假日";
+        hb.addEventListener("click", function () {
+          var idx = m.holidays.indexOf(d);
+          if (idx >= 0) m.holidays.splice(idx, 1); else m.holidays.push(d);
+          save(); renderCal();
         });
-        var k = assignKey(d, shift);
-        sel.value = md.assign[k] || "";
-        if (sel.value !== (md.assign[k] || "")) sel.value = ""; // 選項已不存在
-        sel.addEventListener("change", function () {
-          if (sel.value) md.assign[k] = sel.value; else delete md.assign[k];
-          save(); renderStats();
-        });
-        td.appendChild(sel);
-        tr.appendChild(td);
+        head.appendChild(hb);
+      }
+      cell.appendChild(head);
+
+      const selR = document.createElement("select");
+      selR.className = "selr";
+      var b0 = document.createElement("option");
+      b0.value = ""; b0.textContent = "—";
+      selR.appendChild(b0);
+      byRole("R").forEach(function (p) {
+        var o = document.createElement("option");
+        o.value = p.code;
+        var mark = "";
+        if ((m.off[p.code] || []).indexOf(d) >= 0) mark = "(預假)";
+        else if ((m.want[p.code] || []).indexOf(d) >= 0) mark = "(預班)";
+        o.textContent = p.name + mark;
+        selR.appendChild(o);
       });
+      selR.value = m.duty[d] || "";
+      if (selR.value !== (m.duty[d] || "")) selR.value = "";
+      selR.addEventListener("change", function () {
+        if (selR.value) m.duty[d] = selR.value; else delete m.duty[d];
+        save(); renderCal();
+      });
+      cell.appendChild(selR);
 
-      body.appendChild(tr);
+      if (m.duty[d] && (m.off[m.duty[d]] || []).indexOf(d) >= 0) {
+        var f = document.createElement("span");
+        f.className = "flag off"; f.textContent = "預假!";
+        cell.appendChild(f);
+      } else if (m.duty[d] && (m.want[m.duty[d]] || []).indexOf(d) >= 0) {
+        var f2 = document.createElement("span");
+        f2.className = "flag want"; f2.textContent = "預班";
+        cell.appendChild(f2);
+      }
+
+      var vsRow = document.createElement("div");
+      vsRow.className = "vs-row";
+      var vlab = document.createElement("span");
+      vlab.className = "vlab"; vlab.textContent = "VS";
+      vsRow.appendChild(vlab);
+      const selV = document.createElement("select");
+      selV.className = "selv";
+      var oa = document.createElement("option");
+      oa.value = "";
+      var autoVs = "";
+      var rr = m.duty[d] ? byCode(m.duty[d]) : null;
+      if (rr && rr.vs && byCode(rr.vs)) autoVs = byCode(rr.vs).name;
+      oa.textContent = autoVs ? autoVs + "(自動)" : "—";
+      selV.appendChild(oa);
+      byRole("VS").forEach(function (p) {
+        var o = document.createElement("option");
+        o.value = p.code; o.textContent = p.name;
+        selV.appendChild(o);
+      });
+      selV.value = m.vsOv[d] || "";
+      if (selV.value !== (m.vsOv[d] || "")) selV.value = "";
+      if (m.vsOv[d]) selV.className = "selv overridden";
+      selV.addEventListener("change", function () {
+        if (selV.value) m.vsOv[d] = selV.value; else delete m.vsOv[d];
+        save(); renderCal();
+      });
+      vsRow.appendChild(selV);
+      if (m.vsOv[d]) {
+        var back = document.createElement("button");
+        back.className = "undo"; back.title = "還原為自動帶出";
+        back.textContent = "↺";
+        back.addEventListener("click", function () { delete m.vsOv[d]; save(); renderCal(); });
+        vsRow.appendChild(back);
+      }
+      cell.appendChild(vsRow);
+
+      grid.appendChild(cell);
     }
+
+    var holc = 0;
+    for (var d2 = 1; d2 <= total; d2++) if (isHol(d2)) holc++;
+    document.getElementById("monthInfo").textContent =
+      Y + " 年 " + M + " 月,共 " + total + " 天,假日 " + holc + " 天";
+    renderDutyStats();
+    renderOut();
   }
 
-  // ---------- 自動排班 ----------
-  document.getElementById("btnAuto").addEventListener("click", autoAssign);
-  document.getElementById("btnClear").addEventListener("click", function () {
-    if (!confirm("確定清空 " + curYear + " 年 " + curMonth + " 月的全部排班?")) return;
-    monthData().assign = {};
-    save(); renderAll();
-    setMsg("已清空本月班表。", true);
+  // ---------- auto schedule ----------
+  function calMsg(t, ok) {
+    var el = document.getElementById("calMsg");
+    el.textContent = t;
+    el.className = "cal-msg " + (ok ? "ok" : "warn");
+  }
+  document.getElementById("btnClearDuty").addEventListener("click", function () {
+    if (!confirm("清空 " + Y + " 年 " + M + " 月所有值班 R 與例外 VS?")) return;
+    var m = mdat(); m.duty = {}; m.vsOv = {};
+    save(); renderCal(); calMsg("已清空。", true);
+  });
+  document.getElementById("btnAuto").addEventListener("click", function () {
+    var rs = byRole("R").map(function (p) { return p.code; });
+    if (!rs.length) { calMsg("名單中沒有 R 可排。", false); return; }
+    var m = mdat(), total = dim();
+    var cnt = {}, hcnt = {};
+    rs.forEach(function (c) { cnt[c] = 0; hcnt[c] = 0; });
+    Object.keys(m.duty).forEach(function (d) {
+      var c = m.duty[d];
+      if (c in cnt) { cnt[c]++; if (isHol(+d)) hcnt[c]++; }
+    });
+    for (var d = 1; d <= total; d++) {
+      if (m.duty[d]) continue;
+      var wanters = rs.filter(function (c) { return (m.want[c] || []).indexOf(d) >= 0; });
+      if (wanters.length) {
+        wanters.sort(function (a, b) { return cnt[a] - cnt[b]; });
+        m.duty[d] = wanters[0]; cnt[wanters[0]]++;
+        if (isHol(d)) hcnt[wanters[0]]++;
+      }
+    }
+    var unfilled = 0;
+    for (var d2 = 1; d2 <= total; d2++) {
+      if (m.duty[d2]) continue;
+      var cand = rs.filter(function (c) {
+        if ((m.off[c] || []).indexOf(d2) >= 0) return false;
+        if (m.duty[d2 - 1] === c || m.duty[d2 + 1] === c) return false;
+        return true;
+      });
+      if (!cand.length) cand = rs.filter(function (c) { return (m.off[c] || []).indexOf(d2) < 0; });
+      if (!cand.length) { unfilled++; continue; }
+      var hol = isHol(d2);
+      cand.sort(function (a, b) {
+        if (hol && hcnt[a] !== hcnt[b]) return hcnt[a] - hcnt[b];
+        if (cnt[a] !== cnt[b]) return cnt[a] - cnt[b];
+        return rs.indexOf(a) - rs.indexOf(b);
+      });
+      m.duty[d2] = cand[0]; cnt[cand[0]]++;
+      if (hol) hcnt[cand[0]]++;
+    }
+    save(); renderCal();
+    if (unfilled) calMsg("有 " + unfilled + " 天全員預假,無法排入,請手動處理。", false);
+    else {
+      var parts = rs.map(function (c) { return byCode(c).name + " " + cnt[c] + "(假" + hcnt[c] + ")"; });
+      calMsg("完成:" + parts.join("、"), true);
+    }
   });
 
-  function setMsg(text, ok) {
-    var el = document.getElementById("autoMsg");
-    el.textContent = text;
-    el.className = "msg " + (ok ? "ok" : "err");
+  // ---------- 6. CSV ----------
+  function dutyVsCode(d) {
+    var m = mdat();
+    if (m.vsOv[d]) return m.vsOv[d];
+    var r = m.duty[d] ? byCode(m.duty[d]) : null;
+    if (r && r.vs && byCode(r.vs)) return r.vs;
+    return "";
   }
-
-  function autoAssign() {
-    if (!state.persons.length) { setMsg("請先新增人員。", false); return; }
-    var md = monthData();
-    var avoidConsecutive = document.getElementById("chkAvoidConsecutive").checked;
-    var balanceWeekend = document.getElementById("chkBalanceWeekend").checked;
-    var total = daysInMonth();
-
-    // 目前各人班數(含已手排)
-    var count = {}, weekendCount = {};
-    state.persons.forEach(function (p) { count[personKey(p)] = 0; weekendCount[personKey(p)] = 0; });
-    Object.keys(md.assign).forEach(function (k) {
-      var key = md.assign[k];
-      if (!(key in count)) return;
-      count[key]++;
-      if (isWeekend(+k.split("|")[0])) weekendCount[key]++;
-    });
-
-    var unfilled = 0;
+  function csvRows(block) {
+    var m = mdat(), total = dim();
+    var rows = [];
+    rows.push(["班表代號*", state.schedCodes[block.key] || "", "班表名稱", state.schedName,
+               "", "", "排班年份*", Y, "排班月份*", M, "有*表必輸欄位"]);
+    rows.push(["流水號*", "值班人員", "起始日期*", "星期", "起始時間*"]);
+    var n = 1;
     for (var d = 1; d <= total; d++) {
-      var todayKeys = state.shifts.map(function (s) { return md.assign[assignKey(d, s)]; }).filter(Boolean);
-      for (var si = 0; si < state.shifts.length; si++) {
-        var shift = state.shifts[si];
-        var k = assignKey(d, shift);
-        if (md.assign[k]) continue; // 已手排,不動
-
-        var candidates = state.persons.map(personKey).filter(function (key) {
-          if ((md.unavail[key] || []).indexOf(d) >= 0) return false;      // 預假
-          if (todayKeys.indexOf(key) >= 0) return false;                   // 同日已有班
-          if (avoidConsecutive) {
-            for (var pi = 0; pi < state.shifts.length; pi++) {
-              if (md.assign[assignKey(d - 1, state.shifts[pi])] === key) return false;
-              if (md.assign[assignKey(d + 1, state.shifts[pi])] === key) return false;
-            }
-          }
-          return true;
-        });
-
-        if (!candidates.length) {
-          // 放寬:允許連續值班,只避開預假與同日重複
-          candidates = state.persons.map(personKey).filter(function (key) {
-            return (md.unavail[key] || []).indexOf(d) < 0 && todayKeys.indexOf(key) < 0;
-          });
-        }
-        if (!candidates.length) { unfilled++; continue; }
-
-        candidates.sort(function (a, b) {
-          if (balanceWeekend && isWeekend(d) && weekendCount[a] !== weekendCount[b]) {
-            return weekendCount[a] - weekendCount[b];
-          }
-          if (count[a] !== count[b]) return count[a] - count[b];
-          return state.persons.map(personKey).indexOf(a) - state.persons.map(personKey).indexOf(b);
-        });
-
-        var chosen = candidates[0];
-        md.assign[k] = chosen;
-        todayKeys.push(chosen);
-        count[chosen]++;
-        if (isWeekend(d)) weekendCount[chosen]++;
+      var wname = "星期" + WD[wd(d)];
+      var dayPerson = block.type === "duty"
+        ? (block.key === "dutR" ? (m.duty[d] || "") : dutyVsCode(d))
+        : "";
+      if (isHol(d)) {
+        rows.push([n++, dayPerson, d, wname, 8]);
+      } else {
+        rows.push([n++, m.assign[block.key] || "", d, wname, 8]);
+        rows.push([n++, block.type === "duty" ? dayPerson : "", d, wname, 17]);
       }
     }
-    save(); renderSchedule(); renderStats();
-    if (unfilled) {
-      setMsg("完成,但有 " + unfilled + " 格因預假／人數不足無法排入,請手動調整。", false);
-    } else {
-      setMsg("自動排班完成(已排格子不會被更動)。", true);
-    }
+    return rows;
   }
-
-  // ---------- 統計 ----------
-  function renderStats() {
-    var md = monthData();
-    var grid = document.getElementById("statGrid");
-    grid.innerHTML = "";
-    var total = daysInMonth();
-
-    state.persons.forEach(function (p) {
-      var key = personKey(p);
-      var c = 0, w = 0;
-      for (var d = 1; d <= total; d++) {
-        state.shifts.forEach(function (s) {
-          if (md.assign[assignKey(d, s)] === key) { c++; if (isWeekend(d)) w++; }
-        });
-      }
-      var div = document.createElement("div");
-      div.className = "stat";
-      div.innerHTML = "<b></b><br>總班數 <b></b>・假日班 <b></b>";
-      var bs = div.querySelectorAll("b");
-      bs[0].textContent = personLabel(p);
-      bs[1].textContent = c;
-      bs[2].textContent = w;
-      grid.appendChild(div);
-    });
-    if (!state.persons.length) {
-      grid.innerHTML = '<div class="stat" style="color:var(--muted)">尚未新增人員</div>';
-    }
+  function csvText(block) {
+    return csvRows(block).map(function (r) {
+      var row = r.map(String);
+      while (row.length < 11) row.push("");
+      return row.join(",");
+    }).join("\r\n") + "\r\n";
   }
-
-  // ---------- CSV ----------
-  function csvEscape(v) {
-    v = String(v == null ? "" : v);
-    if (/[",\n\r]/.test(v)) v = '"' + v.replace(/"/g, '""') + '"';
-    return v;
-  }
-  function downloadCsv(rows, filename) {
-    var text = rows.map(function (r) { return r.map(csvEscape).join(","); }).join("\r\n");
-    var blob = new Blob(["\ufeff" + text], { type: "text/csv;charset=utf-8" });
+  function triggerDownload(blob, filename) {
     var a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(a.href);
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
-  function pad2(n) { return String(n).padStart(2, "0"); }
-
-  document.getElementById("btnCsvSchedule").addEventListener("click", function () {
-    var md = monthData();
-    var rows = [["日期", "星期", "是否假日"].concat(state.shifts)];
-    var total = daysInMonth();
-    for (var d = 1; d <= total; d++) {
-      var row = [
-        curYear + "-" + pad2(curMonth) + "-" + pad2(d),
-        "週" + WEEKDAYS[weekdayOf(d)],
-        isWeekend(d) ? "假日" : ""
-      ];
-      state.shifts.forEach(function (s) {
-        var key = md.assign[assignKey(d, s)];
-        var p = key ? findPerson(key) : null;
-        row.push(p ? personLabel(p) : "");
-      });
-      rows.push(row);
+  function fileName(block) {
+    return (state.schedCodes[block.key] || "未設代號") + "_" + Y + pad2(M) + ".csv";
+  }
+  function downloadBlock(block) {
+    if (!state.schedCodes[block.key]) { alert("「" + block.label + "」尚未設定班表代號。"); return; }
+    var blob = new Blob(["\ufeff" + csvText(block)], { type: "text/csv;charset=utf-8" });
+    triggerDownload(blob, fileName(block));
+  }
+  document.getElementById("btnDlAll").addEventListener("click", function () {
+    var missing = BLOCKS.filter(function (b) { return !state.schedCodes[b.key]; });
+    if (missing.length) {
+      alert("尚未設定班表代號:" + missing.map(function (b) { return b.label; }).join("、"));
+      return;
     }
-    downloadCsv(rows, "ID班表_" + curYear + pad2(curMonth) + ".csv");
-  });
-
-  document.getElementById("btnCsvStats").addEventListener("click", function () {
-    var md = monthData();
-    var total = daysInMonth();
-    var rows = [["代號", "姓名", "總班數", "平日班", "假日班", "值班日期"]];
-    state.persons.forEach(function (p) {
-      var key = personKey(p);
-      var days = [];
-      var c = 0, w = 0;
-      for (var d = 1; d <= total; d++) {
-        state.shifts.forEach(function (s) {
-          if (md.assign[assignKey(d, s)] === key) {
-            c++; if (isWeekend(d)) w++;
-            days.push(curMonth + "/" + d + (state.shifts.length > 1 ? "(" + s + ")" : ""));
-          }
-        });
-      }
-      rows.push([p.id || "", p.name, c, c - w, w, days.join("、")]);
+    BLOCKS.forEach(function (b, i) {
+      setTimeout(function () { downloadBlock(b); }, i * 400);
     });
-    downloadCsv(rows, "ID班表統計_" + curYear + pad2(curMonth) + ".csv");
   });
+  function renderOut() {
+    var m = mdat(), total = dim();
+    var tbody = document.querySelector("#tblOut tbody");
+    tbody.innerHTML = "";
+    BLOCKS.forEach(function (b) {
+      var tr = document.createElement("tr");
+      tr.innerHTML = "<td></td><td></td><td class='fname'></td><td></td>";
+      tr.cells[0].textContent = b.label;
+      const inp = document.createElement("input");
+      inp.className = "sched-code";
+      inp.maxLength = 8;
+      inp.value = state.schedCodes[b.key] || "";
+      inp.placeholder = "代號";
+      inp.addEventListener("change", function () {
+        state.schedCodes[b.key] = inp.value.trim();
+        save(); renderAssign(); renderOut();
+      });
+      tr.cells[1].appendChild(inp);
+      tr.cells[2].textContent = fileName(b);
+      var btn = document.createElement("button");
+      btn.textContent = "下載";
+      btn.addEventListener("click", function () { downloadBlock(b); });
+      tr.cells[3].appendChild(btn);
+      tbody.appendChild(tr);
+    });
 
-  // ---------- 整體 render ----------
+    var openDays = 0;
+    for (var d = 1; d <= total; d++) if (!m.duty[d]) openDays++;
+    var noVs = 0;
+    for (var d2 = 1; d2 <= total; d2++) if (m.duty[d2] && !dutyVsCode(d2)) noVs++;
+    var el = document.getElementById("outMsg");
+    if (openDays || noVs) {
+      el.className = "out-msg warn";
+      el.textContent = (openDays ? "值班 R 尚有 " + openDays + " 天未排" : "") +
+        (openDays && noVs ? ";" : "") +
+        (noVs ? noVs + " 天值班 VS 無法帶出(R 未設定對應 VS)" : "") + ",輸出檔對應欄位會是空白。";
+    } else {
+      el.className = "out-msg ok";
+      el.textContent = "本月值班已排滿,可輸出。";
+    }
+  }
+
+  // ---------- 7. share ----------
+  function bytesToB64url(bytes) {
+    var s = "";
+    for (var i = 0; i < bytes.length; i++) s += String.fromCharCode(bytes[i]);
+    return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  }
+  function b64urlToBytes(str) {
+    str = str.replace(/-/g, "+").replace(/_/g, "/");
+    while (str.length % 4) str += "=";
+    var bin = atob(str);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  async function deflate(bytes) {
+    var cs = new CompressionStream("deflate-raw");
+    var stream = new Blob([bytes]).stream().pipeThrough(cs);
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+  async function inflate(bytes) {
+    var ds = new DecompressionStream("deflate-raw");
+    var stream = new Blob([bytes]).stream().pipeThrough(ds);
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+  document.getElementById("btnShare").addEventListener("click", async function () {
+    var payload = {
+      t: "ntuhid1", y: Y, m: M,
+      persons: state.persons, schedCodes: state.schedCodes, schedName: state.schedName,
+      month: mdat()
+    };
+    var bytes = new TextEncoder().encode(JSON.stringify(payload));
+    var frag;
+    if (window.CompressionStream) frag = "c." + bytesToB64url(await deflate(bytes));
+    else frag = "p." + bytesToB64url(bytes);
+    var url = location.origin + location.pathname + "#d=" + frag;
+    var box = document.getElementById("shareBox");
+    box.value = url; box.hidden = false;
+    var copyBtn = document.getElementById("btnCopyShare");
+    copyBtn.hidden = false;
+  });
+  document.getElementById("btnCopyShare").addEventListener("click", function () {
+    var box = document.getElementById("shareBox");
+    box.select();
+    if (navigator.clipboard) navigator.clipboard.writeText(box.value);
+    else document.execCommand("copy");
+    this.textContent = "已複製!";
+    var btn = this;
+    setTimeout(function () { btn.textContent = "複製網址"; }, 1500);
+  });
+  async function tryLoadFromHash() {
+    var mHash = location.hash.match(/^#d=([cp])\.([A-Za-z0-9_-]+)$/);
+    if (!mHash) return;
+    try {
+      var bytes = b64urlToBytes(mHash[2]);
+      if (mHash[1] === "c") bytes = await inflate(bytes);
+      var payload = JSON.parse(new TextDecoder().decode(bytes));
+      if (payload.t !== "ntuhid1") return;
+      if (!confirm("載入分享的班表(" + payload.y + " 年 " + payload.m + " 月)?\n將覆蓋此瀏覽器中的名單與該月份排班資料。")) {
+        history.replaceState(null, "", location.pathname + location.search);
+        return;
+      }
+      state.persons = payload.persons || [];
+      if (payload.schedCodes) BLOCKS.forEach(function (b) {
+        if (typeof payload.schedCodes[b.key] === "string") state.schedCodes[b.key] = payload.schedCodes[b.key];
+      });
+      if (payload.schedName) state.schedName = payload.schedName;
+      var id = payload.y + "-" + pad2(payload.m);
+      state.months[id] = payload.month || {};
+      ["holidays"].forEach(function (k) { if (!Array.isArray(state.months[id][k])) state.months[id][k] = []; });
+      ["duty", "vsOv", "assign", "off", "want"].forEach(function (k) {
+        if (typeof state.months[id][k] !== "object" || !state.months[id][k]) state.months[id][k] = {};
+      });
+      save();
+      setMonth(payload.y, payload.m);
+      renderAll();
+      calMsg("已載入分享的班表。", true);
+    } catch (e) {
+      alert("分享網址內容無法解讀。");
+    }
+    history.replaceState(null, "", location.pathname + location.search);
+  }
+
+  // ---------- render all ----------
   function renderAll() {
-    document.getElementById("monthInfo").textContent =
-      curYear + " 年 " + curMonth + " 月,共 " + daysInMonth() + " 天";
-    renderShifts();
-    renderPersons();
-    renderSchedule();
-    renderStats();
+    renderRoster(); renderAssign(); renderPrefs(); renderCal();
   }
   renderAll();
+  tryLoadFromHash();
 })();
 </script>
 </body>
