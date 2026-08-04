@@ -21,6 +21,8 @@
     --ok: #177245;
     --ok-soft: #E2F2E9;
     --shadow: 0 1px 3px rgba(29,43,47,.07);
+    --p0: #DCEBFA; --p1: #E3F4DE; --p2: #F6E4F0; --p3: #FDEAD2;
+    --p4: #E4E7FB; --p5: #DFF3F0; --p6: #F9E3E0; --p7: #F0EFD8;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -39,6 +41,8 @@
       --ok: #4FBE7E;
       --ok-soft: #1B3226;
       --shadow: 0 1px 3px rgba(0,0,0,.4);
+      --p0: #1E3A54; --p1: #22402A; --p2: #462A3F; --p3: #4A3418;
+      --p4: #2A2F55; --p5: #1C3F3B; --p6: #4A2620; --p7: #3C3A1E;
     }
   }
   * { box-sizing: border-box; }
@@ -181,6 +185,14 @@
   .vs-row .vlab { font-size: .64rem; color: var(--muted); letter-spacing: .1em; }
   .vs-row button.undo { font-size: .66rem; padding: 1px 5px; background: transparent; color: var(--muted); border-color: transparent; }
   select.overridden { border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+  select.pc0, .stat-chip.pc0 { background: var(--p0); }
+  select.pc1, .stat-chip.pc1 { background: var(--p1); }
+  select.pc2, .stat-chip.pc2 { background: var(--p2); }
+  select.pc3, .stat-chip.pc3 { background: var(--p3); }
+  select.pc4, .stat-chip.pc4 { background: var(--p4); }
+  select.pc5, .stat-chip.pc5 { background: var(--p5); }
+  select.pc6, .stat-chip.pc6 { background: var(--p6); }
+  select.pc7, .stat-chip.pc7 { background: var(--p7); }
   .flag {
     display: inline-block; font-size: .7rem; font-weight: 700; border-radius: 6px;
     padding: 0 6px; align-self: flex-start;
@@ -396,6 +408,11 @@
     return null;
   }
   function pad2(n) { return String(n).padStart(2, "0"); }
+  function colorClass(rCode) {
+    var idx = -1, rs = byRole("R");
+    for (var i = 0; i < rs.length; i++) if (rs[i].code === rCode) { idx = i; break; }
+    return idx < 0 ? "" : "pc" + (idx % 8);
+  }
 
   // ---------- 1. roster ----------
   function renderRoster() {
@@ -615,6 +632,7 @@
       }
       var chip = document.createElement("span");
       chip.className = "stat-chip" + (wk + hol ? "" : " zero");
+      var pcC = colorClass(p.code); if (pcC) chip.classList.add(pcC);
       var b = document.createElement("b"); b.textContent = p.name;
       var n = document.createElement("span"); n.className = "nums";
       n.textContent = wk + " 平 " + hol + " 假";
@@ -699,6 +717,7 @@
       });
       selR.value = m.duty[d] || "";
       if (selR.value !== (m.duty[d] || "")) selR.value = "";
+      if (m.duty[d]) { var pcR = colorClass(m.duty[d]); if (pcR) selR.classList.add(pcR); }
       selR.addEventListener("change", function () {
         if (selR.value) m.duty[d] = selR.value; else delete m.duty[d];
         save(); renderCal();
@@ -737,6 +756,11 @@
       selV.value = m.vsOv[d] || "";
       if (selV.value !== (m.vsOv[d] || "")) selV.value = "";
       if (m.vsOv[d]) selV.className = "selv overridden";
+      var mappedVs = (rr && rr.vs && byCode(rr.vs)) ? rr.vs : "";
+      var effVs = m.vsOv[d] || mappedVs;
+      if (m.duty[d] && mappedVs && effVs === mappedVs) {
+        var pcV = colorClass(m.duty[d]); if (pcV) selV.classList.add(pcV);
+      }
       selV.addEventListener("change", function () {
         if (selV.value) m.vsOv[d] = selV.value; else delete m.vsOv[d];
         save(); renderCal();
@@ -872,7 +896,8 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
   function fileName(block) {
-    return (state.schedCodes[block.key] || "未設代號") + "_" + Y + pad2(M) + ".csv";
+    var lab = block.label.replace(/[\/\s]/g, "");
+    return lab + "_" + (state.schedCodes[block.key] || "未設代號") + "_" + Y + pad2(M) + ".csv";
   }
   function downloadBlock(block) {
     if (!state.schedCodes[block.key]) { alert("「" + block.label + "」尚未設定班表代號。"); return; }
