@@ -1109,11 +1109,14 @@
     if (on) renderView();
   }
   function rLabels() {
-    var rs = byRole("R"), firsts = {}, map = {};
-    rs.forEach(function (p) { var c = p.name.charAt(0); firsts[c] = (firsts[c] || 0) + 1; });
+    var rs = byRole("R"), given = {}, map = {};
     rs.forEach(function (p) {
-      var c = p.name.charAt(0);
-      map[p.code] = firsts[c] > 1 ? p.name.slice(0, 2) : c;
+      var g = p.name.length > 1 ? p.name.slice(1) : p.name;
+      given[g] = (given[g] || 0) + 1;
+    });
+    rs.forEach(function (p) {
+      var g = p.name.length > 1 ? p.name.slice(1) : p.name;
+      map[p.code] = given[g] > 1 ? p.name : g;
     });
     return map;
   }
