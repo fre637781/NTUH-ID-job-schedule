@@ -14,7 +14,7 @@
     --accent: #0E7C86;
     --accent-ink: #0B5F67;
     --accent-soft: #E3F1F2;
-    --hol: #FBF1E3;
+    --hol: #FDF8EF;
     --hol-ink: #A8630C;
     --warn: #C2410C;
     --warn-soft: #FBE8DE;
@@ -34,7 +34,7 @@
       --accent: #4FB3BC;
       --accent-ink: #7BC8CF;
       --accent-soft: #173237;
-      --hol: #2B2318;
+      --hol: #211D15;
       --hol-ink: #D69A4E;
       --warn: #E5764A;
       --warn-soft: #3A241B;
@@ -452,8 +452,8 @@
     { key: "wesV", label: "西址 VS",      role: "VS", type: "plain" },
     { key: "b14",  label: "14B",          role: "R",  type: "plain" },
     { key: "e53",  label: "5E3",          role: "R",  type: "plain" },
-    { key: "dutR", label: "急診/值班 R",  role: "R",  type: "duty" },
-    { key: "dutV", label: "急診/值班 VS", role: "VS", type: "duty" }
+    { key: "dutR", label: "急診 R",  file: "急診值班R",  role: "R",  type: "duty" },
+    { key: "dutV", label: "急診 VS", file: "急診值班VS", role: "VS", type: "duty" }
   ];
 
   // ---------- state ----------
@@ -1057,7 +1057,7 @@
     setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
   }
   function fileName(block) {
-    var lab = block.label.replace(/[\/\s]/g, "");
+    var lab = block.file || block.label.replace(/[\/\s]/g, "");
     return lab + "_" + (state.schedCodes[block.key] || "未設代號") + "_" + Y + pad2(M) + ".csv";
   }
   function downloadBlock(block) {
@@ -1223,7 +1223,7 @@
     { label: "西址", r: "wesR", v: "wesV" },
     { label: "14B", r: "b14", v: null },
     { label: "5E3", r: "e53", v: null },
-    { label: "急診/值班", r: "dutR", v: "dutV" }
+    { label: "急診", r: "dutR", v: "dutV" }
   ];
   function nameOf(code) {
     var p = code ? byCode(code) : null;
@@ -1441,7 +1441,7 @@
       var cx = pad + (pos % 7) * (cellW + gap);
       var cy2 = top + Math.floor(pos / 7) * (cellH + gap);
       rrPath(ctx, cx, cy2, cellW, cellH, 12);
-      ctx.fillStyle = isHol(d) ? "#FBF1E3" : "#FFFFFF";
+      ctx.fillStyle = isHol(d) ? "#FDF8EF" : "#FFFFFF";
       ctx.fill();
       ctx.strokeStyle = "#DCE6E8"; ctx.lineWidth = 2;
       rrPath(ctx, cx, cy2, cellW, cellH, 12);
