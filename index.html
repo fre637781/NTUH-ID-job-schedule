@@ -289,6 +289,9 @@
       <span class="note">選 R 即自動帶出對應 VS,可逐日改選</span></div>
     <div class="duty-stats" id="dutyStats"></div>
     <div class="cal-toolbar">
+      <label style="font-size:.84rem">上月最後一日值班 R
+        <select id="selPrevLast" style="margin-left:4px"></select>
+      </label>
       <button class="primary" id="btnAuto">自動排班(填滿空格)</button>
       <button class="danger" id="btnClearDuty">清空本月值班</button>
       <span class="spacer"></span>
@@ -297,7 +300,7 @@
     <div class="cal-scroll">
       <div class="cal-grid" id="calGrid"></div>
     </div>
-    <p class="hint">平日格點「平日」鈕可切換為國定假日(整格變色並計入假日班)。R 選單中標注當日預假/預班者;排到預假者顯示紅色警示但不阻擋。上方班數列隨排班即時更新。</p>
+    <p class="hint">平日格點「平日」鈕可切換為國定假日(整格變色並計入假日班)。R 選單中標注當日預假/預班者;排到預假者顯示紅色警示但不阻擋。上方班數列隨排班即時更新。「上月最後一日值班 R」會自動帶入上個月排班結果(可修改),自動排班時第 1 天會避開此人。</p>
   </section>
 
   <!-- 6. 產出 CSV -->
@@ -376,6 +379,12 @@
   function mdat() {
     var m = state.months[mid()];
     if (!m) m = state.months[mid()] = { holidays: [], duty: {}, vsOv: {}, assign: {}, off: {}, want: {} };
+    if (!("prevLast" in m)) {
+      var py = M === 1 ? Y - 1 : Y, pm = M === 1 ? 12 : M - 1;
+      var pd = state.months[py + "-" + pad2(pm)];
+      var plast = new Date(py, pm, 0).getDate();
+      m.prevLast = (pd && pd.duty && pd.duty[plast]) || "";
+    }
     return m;
   }
   function dim() { return new Date(Y, M, 0).getDate(); }
@@ -620,6 +629,19 @@
     grid.innerHTML = "";
     var total = dim();
 
+    var pl = document.getElementById("selPrevLast");
+    pl.innerHTML = "";
+    var pb = document.createElement("option");
+    pb.value = ""; pb.textContent = "\u2014";
+    pl.appendChild(pb);
+    byRole("R").forEach(function (p) {
+      var o = document.createElement("option");
+      o.value = p.code; o.textContent = p.name;
+      pl.appendChild(o);
+    });
+    pl.value = mdat().prevLast || "";
+    if (pl.value !== (mdat().prevLast || "")) pl.value = "";
+
     WD.forEach(function (w, i) {
       var h = document.createElement("div");
       h.className = "dow" + (i === 0 || i === 6 ? " wkend" : "");
@@ -751,23 +773,29 @@
     var m = mdat(); m.duty = {}; m.vsOv = {};
     save(); renderCal(); calMsg("已清空。", true);
   });
+  document.getElementById("selPrevLast").addEventListener("change", function () {
+    mdat().prevLast = this.value;
+    save();
+  });
   document.getElementById("btnAuto").addEventListener("click", function () {
     var rs = byRole("R").map(function (p) { return p.code; });
-    if (!rs.length) { calMsg("名單中沒有 R 可排。", false); return; }
+    if (!rs.length) { calMsg("\u540d\u55ae\u4e2d\u6c92\u6709 R \u53ef\u6392\u3002", false); return; }
     var m = mdat(), total = dim();
-    var cnt = {}, hcnt = {};
-    rs.forEach(function (c) { cnt[c] = 0; hcnt[c] = 0; });
+    var wcnt = {}, hcnt = {};
+    rs.forEach(function (c) { wcnt[c] = 0; hcnt[c] = 0; });
     Object.keys(m.duty).forEach(function (d) {
       var c = m.duty[d];
-      if (c in cnt) { cnt[c]++; if (isHol(+d)) hcnt[c]++; }
+      if (c in wcnt) { if (isHol(+d)) hcnt[c]++; else wcnt[c]++; }
     });
+    function tot(c) { return wcnt[c] + hcnt[c]; }
+    function prevOf(d) { return d === 1 ? (m.prevLast || "") : (m.duty[d - 1] || ""); }
     for (var d = 1; d <= total; d++) {
       if (m.duty[d]) continue;
       var wanters = rs.filter(function (c) { return (m.want[c] || []).indexOf(d) >= 0; });
       if (wanters.length) {
-        wanters.sort(function (a, b) { return cnt[a] - cnt[b]; });
-        m.duty[d] = wanters[0]; cnt[wanters[0]]++;
-        if (isHol(d)) hcnt[wanters[0]]++;
+        wanters.sort(function (a, b) { return tot(a) - tot(b); });
+        m.duty[d] = wanters[0];
+        if (isHol(d)) hcnt[wanters[0]]++; else wcnt[wanters[0]]++;
       }
     }
     var unfilled = 0;
@@ -775,7 +803,7 @@
       if (m.duty[d2]) continue;
       var cand = rs.filter(function (c) {
         if ((m.off[c] || []).indexOf(d2) >= 0) return false;
-        if (m.duty[d2 - 1] === c || m.duty[d2 + 1] === c) return false;
+        if (prevOf(d2) === c || m.duty[d2 + 1] === c) return false;
         return true;
       });
       if (!cand.length) cand = rs.filter(function (c) { return (m.off[c] || []).indexOf(d2) < 0; });
@@ -783,17 +811,18 @@
       var hol = isHol(d2);
       cand.sort(function (a, b) {
         if (hol && hcnt[a] !== hcnt[b]) return hcnt[a] - hcnt[b];
-        if (cnt[a] !== cnt[b]) return cnt[a] - cnt[b];
+        if (!hol && wcnt[a] !== wcnt[b]) return wcnt[a] - wcnt[b];
+        if (tot(a) !== tot(b)) return tot(a) - tot(b);
         return rs.indexOf(a) - rs.indexOf(b);
       });
-      m.duty[d2] = cand[0]; cnt[cand[0]]++;
-      if (hol) hcnt[cand[0]]++;
+      m.duty[d2] = cand[0];
+      if (hol) hcnt[cand[0]]++; else wcnt[cand[0]]++;
     }
     save(); renderCal();
-    if (unfilled) calMsg("有 " + unfilled + " 天全員預假,無法排入,請手動處理。", false);
+    if (unfilled) calMsg("\u6709 " + unfilled + " \u5929\u5168\u54e1\u9810\u5047\uff0c\u7121\u6cd5\u6392\u5165\uff0c\u8acb\u624b\u52d5\u8655\u7406\u3002", false);
     else {
-      var parts = rs.map(function (c) { return byCode(c).name + " " + cnt[c] + "(假" + hcnt[c] + ")"; });
-      calMsg("完成:" + parts.join("、"), true);
+      var parts = rs.map(function (c) { return byCode(c).name + " " + wcnt[c] + "\u5e73" + hcnt[c] + "\u5047"; });
+      calMsg("\u5b8c\u6210\uff1a" + parts.join("\u3001"), true);
     }
   });
 
