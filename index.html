@@ -881,6 +881,7 @@
       if (m.duty[d]) { var pcR = colorClass(m.duty[d]); if (pcR) selR.classList.add(pcR); }
       selR.addEventListener("change", function () {
         if (selR.value) m.duty[d] = selR.value; else delete m.duty[d];
+        delete m.vsOv[d];
         save(); renderCal();
       });
       cell.appendChild(selR);
@@ -1105,12 +1106,20 @@
     for (var d = 1; d <= total; d++) if (!m.duty[d]) openDays++;
     var noVs = 0;
     for (var d2 = 1; d2 <= total; d2++) if (m.duty[d2] && !dutyVsCode(d2)) noVs++;
+    var ovDays = [];
+    for (var d3 = 1; d3 <= total; d3++) if (m.vsOv[d3]) ovDays.push(d3);
+    var ovNote = ovDays.length
+      ? "注意:" + ovDays.join("、") + " 日的值班 VS 為手動例外(非配對帶出),請確認是否正確。"
+      : "";
     var el = document.getElementById("outMsg");
     if (openDays || noVs) {
       el.className = "out-msg warn";
       el.textContent = (openDays ? "值班 R 尚有 " + openDays + " 天未排" : "") +
         (openDays && noVs ? ";" : "") +
-        (noVs ? noVs + " 天值班 VS 無法帶出(R 未設定對應 VS)" : "") + ",輸出檔對應欄位會是空白。";
+        (noVs ? noVs + " 天值班 VS 無法帶出(R 未設定對應 VS)" : "") + ",輸出檔對應欄位會是空白。" + ovNote;
+    } else if (ovDays.length) {
+      el.className = "out-msg warn";
+      el.textContent = "本月值班已排滿。" + ovNote;
     } else {
       el.className = "out-msg ok";
       el.textContent = "本月值班已排滿,可輸出。";
